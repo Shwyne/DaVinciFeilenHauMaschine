@@ -9,7 +9,7 @@ class Hall {
         bool state_;
     public:
         Hall(int pin);
-        bool getState();
+        bool read();
         ~Hall();
 };
 

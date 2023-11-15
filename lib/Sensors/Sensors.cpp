@@ -5,7 +5,7 @@ Hall::Hall(int pin) {
     pinMode(pin_, INPUT);
 }
 
-bool Hall::getState() {
+bool Hall::read() {
     state_ = digitalRead(pin_);
     return state_;
 }
