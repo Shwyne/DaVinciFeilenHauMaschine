@@ -8,10 +8,11 @@
 #include <AccelStepper.h>
 #include "config.hpp"
 
-//*Einzeltests
+
 
 namespace testing{
 
+    //*Einzeltests
     void TestDC(motor mdc);
     void ServoData(CustomServo srv);
     void TestServo(CustomServo srv, Endstop esGe);
@@ -20,7 +21,8 @@ namespace testing{
     void TestES(Endstop es);
     void TestHall(Hall hall);
     void TestButton(uint8_t pin);
-
+    
+    //*Funktionsgruppen
     void TestHammer(motor mdc, CustomServo srvHs, Endstop esGe, Hall hallHr);
     void TestSchlitten(motor moSl, Servo srvKu, Endstop esSl);
     void TestSchild(AccelStepper stp, Hall hallSh);

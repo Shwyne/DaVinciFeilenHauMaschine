@@ -85,6 +85,25 @@ void motor::sleep(){
 	brake(0);
 	digitalWrite(SLP,LOW);
 }
+
+void motor::printData(){
+	Serial.println("\nMotor-Data:");
+	Serial.println("----------------------");
+	Serial.println("IN1: " + String(IN1));
+	Serial.println("IN2: " + String(IN2));
+	Serial.println("SLP: " + String(SLP));
+	Serial.println("Speed: " + String(speed_));
+	Serial.println("BrakeForce: " + String(breakForce_));
+	if(sleepState() == true){
+		Serial.println("SleepState: Sleep");
+	}
+	else{
+		Serial.println("SleepState: Active");
+	}
+	Serial.println("----------------------\n");
+	Serial.println("End of Data");
+	Serial.println("-----------------");
+}
 	
 motor::~motor(){
 	brake(0);

@@ -23,6 +23,7 @@ class motor{
 		int getBrakeForce();	//Gets brake speed of Motor
 		bool sleepState();				//Gets Sleep State of Motor (Status mentioned standby_)
 		void sleep();					//Puts Driver to Sleep
+		void printData();				//Prints all Data of Motor
 		~motor();							//Destructor -> Brakes first then enables SLP
 };
 

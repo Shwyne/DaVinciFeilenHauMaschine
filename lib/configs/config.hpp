@@ -1,6 +1,8 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+#include <Arduino.h>
+
 namespace pin {
 
     //*DC-Motor Hammerrad:
@@ -53,12 +55,16 @@ namespace pin {
     const uint8_t STP_INTERFACE = 1;    //Stepper Interface (1 = Driver)
     const uint8_t STP_MODE = 1;  //Stepper Mode (1 = Full Step, 2 = Half Step, 4 = Quarter Step, 8 = Eighth Step)
     const short STP_STEPS = 200;  //Stepper Steps per Revolution
-    const short STP_SPEED = 100;   //Stepper Speed
+    const short STP_MAXSPEED = 100;   //Stepper Speed in Steps/Second -> Translate to RPS(s^-1): Steps * Steps/s = RPS -> *60 = RPM (min^-1)
     const short STP_ACCEL = 30;   //Stepper Acceleration
+    const short STP_SPEED = 50;  //Stepper Speed
 
     //*Servo-Settings:
     const uint8_t SRV_MIN = 0;   //Servo min Angle
     const uint8_t SRV_MAX = 180; //Servo max Angle
+
+    //*Sensor-Settings:
+    const bool HALL_TRIGGER = 0;    //Hall-Sensor Trigger State (0 = LOW, 1 = HIGH)
 
 namespace pos{
     

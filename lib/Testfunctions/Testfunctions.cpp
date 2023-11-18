@@ -81,28 +81,34 @@ namespace testing{  //!Namespace for testing functions
             srvHs.attach();
         }
         Serial.println("Testing Hammerfunction");
+        
         Serial.println("Servo to pos1");
         srvHs.write(pos::HS_1);
         delay(DELAY);
+        
         Serial.println("Motor running");
         moHr.run(255);
         delay(DELAY);
+        
         Serial.println("Motor waiting for stop signal");
-        while(esGe.getState() != 1){
-            delay(10);
-        }
+        esGe.waitUntil(1);
+        
         Serial.println("Motor breaking");
         moHr.brake(255);
         delay(DELAY);
+        
         Serial.println("Servo to pos2");
         srvHs.write(pos::HS_2);
         delay(3*DELAY);
+        
         Serial.println("Servo to pos1");
         srvHs.write(pos::HS_1);
         delay(DELAY);
+        
         Serial.println("Motor running in other direction");
         moHr.run(-255);
         delay(DELAY);
+        
         Serial.println("Motor braking");
         moHr.brake(255);
     }
@@ -112,7 +118,9 @@ namespace testing{  //!Namespace for testing functions
             srvKu.attach();
         }
         Serial.println("Testing Schlitten");
+        
         int speed = 255;
+        
         if(esSl.getState() != 0){
             if(esSl.getState() == 1){
                 Serial.println("Schlitten ist links");
@@ -135,11 +143,13 @@ namespace testing{  //!Namespace for testing functions
             moSl.brake(speed);
             delay(DELAY);
         }
+
     }
 
     void TestSchild(AccelStepper step, Hall hallSh){
         int speed = 100;
         Serial.println("Testing Schild");
+
         Serial.println("Stepper to Home");
         while(hallSh.read() != 0){
             step.setSpeed(speed);
@@ -147,12 +157,14 @@ namespace testing{  //!Namespace for testing functions
         }
         step.setCurrentPosition(0);
         delay(DELAY);
+
         Serial.println("Stepper to 2");
         while(step.currentPosition() != pos::STP_2){
             step.setSpeed(speed);
             step.run();
         }
         delay(DELAY);
+        
         Serial.println("Stepper to 3");
         while(step.currentPosition() != pos::STP_3){
             step.setSpeed(speed);
