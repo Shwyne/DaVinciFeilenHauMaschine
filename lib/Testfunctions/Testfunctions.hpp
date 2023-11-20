@@ -17,13 +17,13 @@ namespace testing{
     void TestServo(CustomServo srv, Endstop esGe);
     void TestServo(CustomServo srv);
     void TestStepper();
-    void TestES(Endstop es);
+    void TestEndstop(Endstop es);
     void TestHall(Hall hall);
     void TestButton(uint8_t pin);
     
     //*Funktionsgruppen
     void TestHammer(motor mdc, CustomServo srvHs, Endstop esGe, Hall hallHr);
-    void TestSchlitten(motor moSl, Servo srvKu, Endstop esSl);
+    void TestSchlitten(motor moSl, Endstop esSl);
     void TestSchild(AccelStepper stp, Hall hallSh);
 
 }

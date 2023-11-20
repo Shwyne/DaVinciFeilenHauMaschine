@@ -7,24 +7,23 @@
 #include <AccelStepper.h>       //Stepper Library
 #include "CustomStepper.hpp"    //Custom Stepper Library -> depends on AccelStepper.h
 
-//* functions:
-void inits();        //initialisation function
-void defaults();     //default function
-void DC2reset();  //reset function for both DC-Motors
-void DC2run();      //run function for both DC-Motors
-void couple();      //coupling and engaging Hammerstop
-void decouple();    //decoupling and releasing Hammerstop
-
 //* objects:
 motor moHr(pin::HR_IN1, pin::HR_IN2, pin::HR_SLP);  //Motor Hammerrad (In1, In2, Sleep)
 motor moSl(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP);  //Motor Schlitten (In1, In2, Sleep)
 CustomServo srvHs(pin::HS_SRV, SRV_MIN, SRV_MAX, pos::HS_1, pos::HS_2);  //Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 CustomServo srvKu(pin::KU_SRV, SRV_MIN, SRV_MAX, pos::KU_1, pos::KU_2);  //Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
 CustomStepper stp(STP_INTERFACE, pin::STP_STP, pin::STP_DIR, pin::STP_SLP, STP_MAXSPEED, STP_ACCEL, pin::SH_HALL, HALL_TRIGGER);    //Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin)
-Endstop esGe(pin::GE_ES_O, pin::GE_ES_U, ES_MODE);   //Endschalter Gewicht: State 1 = Oben, State 2 = Unten
-Endstop esSl(pin::SL_ES_R, pin::SL_ES_L, ES_MODE);    //Endschalter Schlitten: State 1 = Rechts, State 2 = Links
+Endstop esGe(pin::GE_ES_U, pin::GE_ES_O, ES_MODE);   //Endschalter Gewicht: State 2 = Oben, State 1 = Unten
+Endstop esSl(pin::SL_ES_L, pin::SL_ES_R, ES_MODE);    //Endschalter Schlitten: State 2 = Rechts, State 1 = Links
 Hall hallHr(pin::HR_HALL);                      //Hall-Sensor Hammerrad 
 
+//* functions:
+void inits();        //initialisation function
+void defaults();     //default function
+void DC2reset();  //reset function for both DC-Motors
+bool DC2run();      //run function for both DC-Motors
+void couple();      //coupling and engaging Hammerstop
+void decouple();    //decoupling and releasing Hammerstop
 
 void setup() {
 
@@ -63,6 +62,8 @@ void setup() {
 
 void loop() {
     //defaults();       //default function
+    testing::TestSchlitten(moHr, esSl);
+    //testing::TestEndstop(esSl);
 }
 
 
@@ -70,7 +71,7 @@ void loop() {
 void inits(){
     if(esGe.read() != 1 && esSl.read() !=1){        //*  1.     Check status of relevant sensors
         decouple();                                 //* (2.)     Decouple and then Hammerstop 
-        DC2reset(true);                              //* (3.)      Move Schlitten and Weight to start position
+        DC2reset();                              //* (3.)      Move Schlitten and Weight to start position
     }                               
     else couple();                                  //*  2.|(4.)   Couple and release Hammerstop
     stp.home(100);                                  //*  3.|(5.)    Move Schild to start position
@@ -96,15 +97,6 @@ void defaults(){
     //* 8. init();
     delay(DELAY);
     inits();
-    
-    
-
-    
-
-    
-
-    
-
     
 }
 
@@ -177,8 +169,8 @@ bool DC2run(){
             return true;
         }
         else{
-            moSl.break(1);
-            moGe.break(1);
+            moSl.brake(1);
+            moHr.brake(1);
             delay(DELAY_2);
             decouple();
             moHr.run(revSpeed);
@@ -194,17 +186,17 @@ bool DC2run(){
 }
 
 void couple(){
-    
+        //Check if servos are already in position
         if(srvKu.read() == pos::KU_2 && srvHs.read() == pos::HS_1){
             return;
         }
-    
+        //If hammerstop is in place but it isnt coupled
         else if(srvKu.read() != pos::KU_2 && srvHs.read() == pos::HS_1){
             srvKu.write(pos::KU_2);
             delay(DELAY);
             return;
         }
-
+        //If hammerstop is not in place but it is coupled
         else if(srvKu.read() == pos::KU_2 && srvHs.read() != pos::HS_1){
             
             if(hallHr.read() == HALL_TRIGGER){
@@ -228,7 +220,7 @@ void couple(){
 
 void decouple(){
 
-    if(srvKu.read() == pos::KU_1 && srvHr.read() == pos::HS_2{
+    if((srvKu.read() == pos::KU_1) && (srvHs.read() == pos::HS_2)){
         return;
     }
 

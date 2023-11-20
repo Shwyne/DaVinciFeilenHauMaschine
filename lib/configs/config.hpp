@@ -23,16 +23,16 @@ namespace pin {
 
     //*Stepper:
     const uint8_t STP_DIR = 32;     //!Zurückändern zu 18!!
-    const uint8_t STP_STP = 17;
+    const uint8_t STP_STP = 39;     //!Zurückändern auf 17!!
     const uint8_t STP_SLP = 16;
     const uint8_t STP_RST = 15;
     const uint8_t STP_FLT = 14;
 
     //*Sensorik:
-    const uint8_t GE_ES_O = 18;  //Endschalter Gewicht oben     //!Zurückändern auf 39!!
+    const uint8_t GE_ES_O = 45;  //Endschalter Gewicht oben     //!Zurückändern auf 39!!
     const uint8_t GE_ES_U = 41;  //Endschalter Gewicht unten
-    const uint8_t SL_ES_L = 43;  //Endschalter Schlitten links
-    const uint8_t SL_ES_R = 45;  //Endschalter Schlitten rechts
+    const uint8_t SL_ES_L = 17;  //Endschalter Schlitten links      //!Zurückändern auf 43!!
+    const uint8_t SL_ES_R = 18;  //Endschalter Schlitten rechts     //!Zurückändern auf 45!!
 
     const uint8_t HR_HALL = 49;  //Hall-Sensor Hammerrad    
     const uint8_t SH_HALL = 51;  //Hall-Sensor Schild
@@ -52,9 +52,9 @@ namespace pin {
     const uint8_t ES_MODE = 0; //Endstop Mode (0 = Pullup, 1 = Pulldown) - default: 0
 
     //*DC-Motor-Settings:
-    const uint8_t DC_MAXSPEED = 255;    //DC-Motor Max Speed
-    const uint8_t DC_RUN_SPEED = 100;   //DC-Motor Speed while running
-    const uint8_t DC_RS_SPEED = -150;    //DC-Motor Speed while reseting 
+    const short DC_MAXSPEED = 255;    //DC-Motor Max Speed
+    const short DC_RUN_SPEED = 100;   //DC-Motor Speed while running
+    const short DC_RS_SPEED = -150;    //DC-Motor Speed while reseting 
 
     //*Stepper-Settings:
     const uint8_t STP_INTERFACE = 1;    //Stepper Interface (1 = Driver)

@@ -58,6 +58,10 @@ namespace testing{  //!Namespace for testing functions
         delay(2*DELAY);
     }
 
+    void TestEndstop(Endstop es){
+        Serial.println("Status: " + String(es.read()));
+    }
+
     void TestHammer(motor moHr, CustomServo srvHs, Endstop esGe, Hall hallHr){
         if(srvHs.attached() == false){
             srvHs.attach();
@@ -95,7 +99,32 @@ namespace testing{  //!Namespace for testing functions
         moHr.brake(255);
     }
 
-    void TestSchlitten(motor moSl, CustomServo srvKu, Endstop esSl){
+    void TestSchlitten(motor moSl, Endstop esSl){
+        int speed = 255;
+        Serial.println("Testing Schlitten\n-----------------");
+        if(esSl.read() != 1){
+            Serial.println("Resetting Schlitten");
+            moSl.run(-speed);
+            esSl.waitUntil(1);
+            moSl.brake(1);
+        }
+        while(true){
+            Serial.println("Schlitten forwards");
+            moSl.run(speed);
+            esSl.waitUntil(2);
+            Serial.println("Reached Endstop 2, Braking");
+            moSl.brake(1);
+            delay(DELAY);
+            Serial.println("Schlitten backwards");
+            moSl.run(-speed);
+            esSl.waitUntil(1);
+            Serial.println("Reached Endstop 1, Braking");
+            moSl.brake(1);
+            delay(DELAY);
+        }
+    }
+    
+    /*void TestSchlitten(motor moSl, CustomServo srvKu, Endstop esSl){
         if(srvKu.attached() == false){
             srvKu.attach();
         }
@@ -126,7 +155,7 @@ namespace testing{  //!Namespace for testing functions
             delay(DELAY);
         }
 
-    }
+    }*/
 
     void TestSchild(AccelStepper step, Hall hallSh){
         int speed = 100;
