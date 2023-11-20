@@ -110,29 +110,3 @@ motor::~motor(){
 	delay(500);
 	digitalWrite(SLP, HIGH);
 }
-
-motorVisen::motorVisen(int IN1pin, int IN2pin, int SLPpin, int VISpin) : motor(IN1pin, IN2pin, SLPpin), VIS(VISpin) {
-    // constructor implementation
-	pinMode(VIS, INPUT);
-
-	CuRatio_ = 0.5;
-	Visen_ = 0;
-}
-
-void motorVisen::setCurrentRatio(int ratio){
-	CuRatio_ = ratio;
-}
-
-double motorVisen::getCurrent(){	//! Calculations are still wrong!
-	Visen_ = analogRead(VIS);
-	Visen_ = (Visen_/1023)*5;
-	Visen_ = Visen_/CuRatio_;
-	return Visen_;
-}
-
-motorVisen::~motorVisen(){
-	brake(1);
-	delay(500);
-	sleep();
-}
-

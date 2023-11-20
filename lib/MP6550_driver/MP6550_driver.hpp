@@ -27,21 +27,4 @@ class motor{
 		~motor();							//Destructor -> Brakes first then enables SLP
 };
 
-class motorVisen : public motor {
-		
-	private:
-		//*Arguments for Control Pins:
-		int VIS;				//Pin connected to VISEN (Current Measurement)
-
-		//*Arguments for Current Measurement:
-		double CuRatio_;		
-		double Visen_;
-	
-	public:
-		motorVisen(int IN1pin, int IN2pin, int SLPpin, int VISpin);	//Constructor with default: Sleep,In1,In2=0, speed = 0, br_speed = 0; standby = 1; dir_ = 0	
-		void setCurrentRatio(int ratio);	//Sets current ratio (Resistance (default 2kOhm) * ISet = V_Isen in V/A)
-		double getCurrent(); 				//Returns current in mA
-		~motorVisen();						//Destructor -> Brakes first then enables SLP
-};
-
 #endif

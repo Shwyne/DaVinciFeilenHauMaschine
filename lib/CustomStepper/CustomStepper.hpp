@@ -38,7 +38,7 @@ class CustomStepper{
 
         bool run(int speed);
         bool runTo(int pos, int speed);
-        void home(int);
+        void home(int speed);
         
         void sleep();
         void wakeUp();

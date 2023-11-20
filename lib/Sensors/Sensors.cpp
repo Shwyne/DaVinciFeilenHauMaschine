@@ -76,7 +76,7 @@ Endstop::Endstop(uint8_t pin1, uint8_t pin2, bool mode) {
     }
 }
 
-uint8_t Endstop::getState() {
+uint8_t Endstop::read() {
     
     if(digitalRead(pin1_) == mode_) {
         return 1;
@@ -88,13 +88,13 @@ uint8_t Endstop::getState() {
 }
 
 void Endstop::waitUntil(uint8_t state){
-    while(getState() != state) {
+    while(read() != state) {
         delay(1);
     }
 }
 
 void Endstop::waitUntil(uint8_t state, int rate){
-    while(getState() != state) {
+    while(read() != state) {
         int delayN = round(1/rate);
         delay(delayN);
     }
@@ -106,7 +106,7 @@ void Endstop::printData(){
     Serial.println("Pin 1: " + String(pin1_));
     Serial.println("Pin 2: " + String(pin2_));
     Serial.println("Mode: " + String(mode_));
-    switch(getState()){
+    switch(read()){
         case 0:
             Serial.println("State: Untriggered");
             break;

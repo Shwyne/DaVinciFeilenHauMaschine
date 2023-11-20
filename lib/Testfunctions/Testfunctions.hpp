@@ -14,7 +14,6 @@ namespace testing{
 
     //*Einzeltests
     void TestDC(motor mdc);
-    void ServoData(CustomServo srv);
     void TestServo(CustomServo srv, Endstop esGe);
     void TestServo(CustomServo srv);
     void TestStepper();

@@ -51,6 +51,11 @@ namespace pin {
     //*Endstop-Settings:
     const uint8_t ES_MODE = 0; //Endstop Mode (0 = Pullup, 1 = Pulldown) - default: 0
 
+    //*DC-Motor-Settings:
+    const uint8_t DC_MAXSPEED = 255;    //DC-Motor Max Speed
+    const uint8_t DC_RUN_SPEED = 100;   //DC-Motor Speed while running
+    const uint8_t DC_RS_SPEED = -150;    //DC-Motor Speed while reseting 
+
     //*Stepper-Settings:
     const uint8_t STP_INTERFACE = 1;    //Stepper Interface (1 = Driver)
     const uint8_t STP_MODE = 1;  //Stepper Mode (1 = Full Step, 2 = Half Step, 4 = Quarter Step, 8 = Eighth Step)

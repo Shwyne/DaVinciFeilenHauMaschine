@@ -26,24 +26,6 @@ namespace testing{  //!Namespace for testing functions
         delay(2*DELAY);
     }
 
-    void ServoData(CustomServo srv){
-        if(srv.attached() == false){
-            srv.attach();
-        }
-        Serial.print("Current Position: ");
-        Serial.println(srv.read());
-        Serial.print("Target Position: ");
-        Serial.println(srv.getPosTarg());
-        Serial.print("Min Position: ");
-        Serial.println(srv.getMin());
-        Serial.print("Max Position: ");
-        Serial.println(srv.getMax());
-        Serial.print("Pos1: ");
-        Serial.println(srv.getPos1());
-        Serial.print("Pos2: ");
-        Serial.println(srv.getPos2());
-    }
-
     void TestServo(CustomServo srv){
         if(srv.attached() == false){
             srv.attach();
@@ -63,13 +45,13 @@ namespace testing{  //!Namespace for testing functions
         }
         Serial.println("Testing Servo");
         Serial.println("Servo to pos1 - Waiting for Signal");
-        while(es.getState() != 1){
+        while(es.read() != 1){
             delay(10);
         }
         srv.run(pos::HS_1);
         delay(2*DELAY);
         Serial.println("Servo to pos2 - Waiting for Signal");
-        while(es.getState() != 1){
+        while(es.read() != 1){
             delay(10);
         }
         srv.run(pos::HS_2);
@@ -121,13 +103,13 @@ namespace testing{  //!Namespace for testing functions
         
         int speed = 255;
         
-        if(esSl.getState() != 0){
-            if(esSl.getState() == 1){
+        if(esSl.read() != 0){
+            if(esSl.read() == 1){
                 Serial.println("Schlitten ist links");
                 delay(DELAY);
                 moSl.run(speed);
             }
-            else if(esSl.getState() == 2){
+            else if(esSl.read() == 2){
                 Serial.println("Schlitten ist rechts");
                 delay(DELAY);
                 moSl.run(-speed);
@@ -137,7 +119,7 @@ namespace testing{  //!Namespace for testing functions
             Serial.println("Kein Endschalter erreicht");
             delay(DELAY);
             moSl.run(speed);
-            while(esSl.getState() == 0){
+            while(esSl.read() == 0){
                 delay(10);
             }
             moSl.brake(speed);

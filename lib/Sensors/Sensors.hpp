@@ -26,7 +26,7 @@ class Endstop {
     public:
         Endstop(uint8_t pin1,uint8_t pin2);
         Endstop(uint8_t pin1,uint8_t pin2, bool mode);
-        uint8_t getState();
+        uint8_t read();
         void waitUntil(uint8_t state);
         void waitUntil(uint8_t state, int rate);
         void printData();
