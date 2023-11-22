@@ -13,7 +13,6 @@ class Hall {
         Hall(uint8_t pin, bool TriggerState);
         bool read();
         void waitUntil(bool state);
-        void waitUntil(bool state, int rate);
         void printData();
         ~Hall();
 };
@@ -28,7 +27,6 @@ class Endstop {
         Endstop(uint8_t pin1,uint8_t pin2, bool mode);
         uint8_t read();
         void waitUntil(uint8_t state);
-        void waitUntil(uint8_t state, int rate);
         void printData();
         ~Endstop();
 };

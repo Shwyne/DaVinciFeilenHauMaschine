@@ -1,6 +1,6 @@
 #include <Arduino.h>    //Arduino Library
 #include "MP6550_driver.hpp"     //Driver MP6550 Library
-#include "CustomServo.hpp"      //Custom Servo Library -> depends on Servo.h
+#include "ServoExp.hpp"      //Custom Servo Library -> depends on Servo.h
 #include "Sensors.hpp"          //Sensor Library
 #include "config.hpp"           //Config file -> Pins, settings, etc.
 #include "Testfunctions.hpp"    //Testfunctions
@@ -11,19 +11,23 @@
 void inits();        //initialisation function
 void defaults();     //default function
 void DC2reset();  //reset function for both DC-Motors
-void DC2run();      //run function for both DC-Motors
+bool DC2run();      //run function for both DC-Motors
 void couple();      //coupling and engaging Hammerstop
 void decouple();    //decoupling and releasing Hammerstop
 
 //* objects:
-motor moHr(pin::HR_IN1, pin::HR_IN2, pin::HR_SLP);  //Motor Hammerrad (In1, In2, Sleep)
-motor moSl(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP);  //Motor Schlitten (In1, In2, Sleep)
-CustomServo srvHs(pin::HS_SRV, SRV_MIN, SRV_MAX, pos::HS_1, pos::HS_2);  //Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
-CustomServo srvKu(pin::KU_SRV, SRV_MIN, SRV_MAX, pos::KU_1, pos::KU_2);  //Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
+MP6550 moHr(pin::HR_IN1, pin::HR_IN2, pin::HR_SLP);  //Motor Hammerrad (In1, In2, Sleep)
+MP6550 moSl(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP);  //Motor Schlitten (In1, In2, Sleep)
+ServoExp srvHs(pin::HS_SRV, SRV_MIN, SRV_MAX);  //Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
+ServoExp srvKu(pin::KU_SRV, SRV_MIN, SRV_MAX);  //Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
 CustomStepper stp(STP_INTERFACE, pin::STP_STP, pin::STP_DIR, pin::STP_SLP, STP_MAXSPEED, STP_ACCEL, pin::SH_HALL, HALL_TRIGGER);    //Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin)
 Endstop esGe(pin::GE_ES_O, pin::GE_ES_U, ES_MODE);   //Endschalter Gewicht: State 1 = Oben, State 2 = Unten
 Endstop esSl(pin::SL_ES_R, pin::SL_ES_L, ES_MODE);    //Endschalter Schlitten: State 1 = Rechts, State 2 = Links
 Hall hallHr(pin::HR_HALL);                      //Hall-Sensor Hammerrad 
+
+//* Testobjects:
+
+int n = 10;
 
 
 void setup() {
@@ -36,6 +40,8 @@ void setup() {
     //* Servo-Setup:
     srvHs.attach();
     srvKu.attach();
+    srvHs.setPosData(pos::HS_1, pos::HS_2);
+    srvKu.setPosData(pos::KU_1, pos::KU_2);
     //*Servo-Data to Serial:
     //srvHs.printData();
     //srvKu.printData();
@@ -48,21 +54,23 @@ void setup() {
 //*     ~~ using namepspace testing -> i.e.: > testing::TestDC(moHr); ~~
 //  Einzeltests:
 //      - TestDC(motor mdc);
-//      - TestServo(CustomServo srv, Endstop esGe);
-//      - TestServo(CustomServo srv);
+//      - TestServo(ServoExp srv, Endstop esGe);
+//      - TestServo(ServoExp srv);
 //      - TestStepper();
 //      - TestES(Endstop es);
 //      - TestHall(Hall hall);
 //      - TestButton(uint8_t pin);
 //
 //  Funktionsgruppen:
-//      - TestHammer(motor mdc, CustomServo srvHs, Endstop esGe, Hall hallHr);
+//      - TestHammer(motor mdc, ServoExp srvHs, Endstop esGe, Hall hallHr);
 //      - TestSchlitten(motor moSl, Servo srvKu, Endstop esSl);
 //      - TestSchild(AccelStepper stp, Hall hallSh);
 
 
 void loop() {
     //defaults();       //default function
+    //testing::TestDCbrake(moHr, 16, 18, 15);
+    //testing::TestDCBrake2(moHr, 15);
 }
 
 
@@ -70,7 +78,7 @@ void loop() {
 void inits(){
     if(esGe.read() != 1 && esSl.read() !=1){        //*  1.     Check status of relevant sensors
         decouple();                                 //* (2.)     Decouple and then Hammerstop 
-        DC2reset(true);                              //* (3.)      Move Schlitten and Weight to start position
+        DC2reset();                              //* (3.)      Move Schlitten and Weight to start position
     }                               
     else couple();                                  //*  2.|(4.)   Couple and release Hammerstop
     stp.home(100);                                  //*  3.|(5.)    Move Schild to start position
@@ -111,7 +119,6 @@ void defaults(){
 void DC2reset(){
 
     int speed = DC_RS_SPEED;
-    const uint8_t breakf = 255;
     int state = 1;
 
     if(esGe.read() != state && esSl.read() != state){
@@ -121,42 +128,42 @@ void DC2reset(){
             delay(10);
         }
         if(esGe.read() == state && esSl.read() == state){
-            moHr.brake(breakf);
-            moSl.brake(breakf);
+            moHr.brake();
+            moSl.brake();
             return;
         }
         else if(esGe.read() == state && esSl.read() != state){
-            moHr.brake(breakf);
+            moHr.brake();
             moSl.run(speed);
             esSl.waitUntil(state);
-            moSl.brake(breakf);
+            moSl.brake();
             return;
         }
         else if(esGe.read() != state && esSl.read() == state){
             moHr.run(speed);
-            moSl.brake(breakf);
+            moSl.brake();
             esGe.waitUntil(state);
-            moHr.brake(breakf);
+            moHr.brake();
             return;
         }
     }
     else if(esGe.read() != state && esSl.read() == state){
         moHr.run(speed);
-        moSl.brake(breakf);
+        moSl.brake();
         esGe.waitUntil(state);
-        moHr.brake(breakf);
+        moHr.brake();
         return;
     }
     else if(esGe.read() == state && esSl.read() != state){
-        moHr.brake(breakf);
+        moHr.brake();
         moSl.run(speed);
         esSl.waitUntil(state);
-        moSl.brake(breakf);
+        moSl.brake();
         return;
     }
     else{
-        moHr.brake(breakf);
-        moSl.brake(breakf);
+        moHr.brake();
+        moSl.brake();
         return;
     }
 }
@@ -166,8 +173,8 @@ bool DC2run(){
     int revSpeed = DC_RS_SPEED;
 
     if(esSl.read() == 2){
-        moHr.brake(1);
-        moSl.brake(1);
+        moHr.brake();
+        moSl.brake();
         return false;
     }
     else{
@@ -177,13 +184,13 @@ bool DC2run(){
             return true;
         }
         else{
-            moSl.break(1);
-            moGe.break(1);
+            moSl.brake();
+            moHr.brake();
             delay(DELAY_2);
             decouple();
             moHr.run(revSpeed);
             esGe.waitUntil(1);
-            moHr.brake(1);
+            moHr.brake();
             delay(DELAY);
             couple();
             return true;
@@ -210,14 +217,14 @@ void couple(){
             if(hallHr.read() == HALL_TRIGGER){
             moHr.run(-255);
             hallHr.waitUntil(!HALL_TRIGGER);
-            moHr.brake(255);
+            moHr.brake();
             }
     
             else{
                 moHr.run(-255);
                 hallHr.waitUntil(HALL_TRIGGER);
                 hallHr.waitUntil(!HALL_TRIGGER);
-                moHr.brake(255);
+                moHr.brake();
             }
             delay(DELAY_4);
             srvKu.write(pos::KU_2);
@@ -228,7 +235,7 @@ void couple(){
 
 void decouple(){
 
-    if(srvKu.read() == pos::KU_1 && srvHr.read() == pos::HS_2{
+    if(srvKu.read() == pos::KU_1 && srvHs.read() == pos::HS_2){
         return;
     }
 
@@ -240,7 +247,7 @@ void decouple(){
     if(hallHr.read() == HALL_TRIGGER){
         moHr.run(255);
         hallHr.waitUntil(!HALL_TRIGGER);
-        moHr.brake(255);
+        moHr.brake();
         
     }
 
@@ -248,7 +255,7 @@ void decouple(){
         moHr.run(255);
         hallHr.waitUntil(HALL_TRIGGER);
         hallHr.waitUntil(!HALL_TRIGGER);
-        moHr.brake(255);
+        moHr.brake();
     }
 
     delay(DELAY_4);

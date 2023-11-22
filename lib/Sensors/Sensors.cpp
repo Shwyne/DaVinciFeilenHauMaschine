@@ -26,13 +26,6 @@ void Hall::waitUntil(bool state){
     }
 }
 
-void Hall::waitUntil(bool state, int rate){
-    while(read() != state) {
-        int delayN = round(1/rate);
-        delay(delayN);
-    }
-}
-
 void Hall::printData(){
     Serial.println("\nHall-Sensor-Data:");
     Serial.println("----------------------");
@@ -93,12 +86,6 @@ void Endstop::waitUntil(uint8_t state){
     }
 }
 
-void Endstop::waitUntil(uint8_t state, int rate){
-    while(read() != state) {
-        int delayN = round(1/rate);
-        delay(delayN);
-    }
-}
 
 void Endstop::printData(){
     Serial.println("\nEndstop-Data:");

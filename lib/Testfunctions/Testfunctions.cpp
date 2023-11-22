@@ -4,29 +4,32 @@
 
 namespace testing{  //!Namespace for testing functions
 
-    void TestDC(motor mdc){
-        Serial.println("Testing DC-Motor");
+    void TestDC(MP6550 mdc){
+
+        Serial.println("Testing MP6550");
         Serial.println("Testing run");
         mdc.run(255);
         delay(DELAY);
         mdc.run(-255);
         delay(DELAY);
+
         Serial.println("Testing brake");
-        mdc.brake(255);
+        mdc.brake();
         delay(DELAY);
         mdc.run(255);
         delay(DELAY);
-        mdc.brake(0);
+        mdc.brake();
         delay(DELAY);
         mdc.run(-255);
         delay(DELAY);
-        mdc.brake(127);
+        mdc.brake();
+
         Serial.println("Testing sleep");
         mdc.sleep();
         delay(2*DELAY);
-    }
+    }     
 
-    void TestServo(CustomServo srv){
+    void TestServo(ServoExp srv){
         if(srv.attached() == false){
             srv.attach();
         }
@@ -39,7 +42,7 @@ namespace testing{  //!Namespace for testing functions
         delay(2*DELAY);
     }
 
-    void TestServo(CustomServo srv, Endstop es){
+    void TestServo(ServoExp srv, Endstop es){
         if(srv.attached() == false){
             srv.attach();
         }
@@ -58,7 +61,7 @@ namespace testing{  //!Namespace for testing functions
         delay(2*DELAY);
     }
 
-    void TestHammer(motor moHr, CustomServo srvHs, Endstop esGe, Hall hallHr){
+    void TestHammer(MP6550 moHr, ServoExp srvHs, Endstop esGe, Hall hallHr){
         if(srvHs.attached() == false){
             srvHs.attach();
         }
@@ -68,15 +71,15 @@ namespace testing{  //!Namespace for testing functions
         srvHs.write(pos::HS_1);
         delay(DELAY);
         
-        Serial.println("Motor running");
+        Serial.println("MP6550 running");
         moHr.run(255);
         delay(DELAY);
         
-        Serial.println("Motor waiting for stop signal");
+        Serial.println("MP6550 waiting for stop signal");
         esGe.waitUntil(1);
         
-        Serial.println("Motor breaking");
-        moHr.brake(255);
+        Serial.println("MP6550 breaking");
+        moHr.brake();
         delay(DELAY);
         
         Serial.println("Servo to pos2");
@@ -87,15 +90,15 @@ namespace testing{  //!Namespace for testing functions
         srvHs.write(pos::HS_1);
         delay(DELAY);
         
-        Serial.println("Motor running in other direction");
+        Serial.println("MP6550 running in other direction");
         moHr.run(-255);
         delay(DELAY);
         
-        Serial.println("Motor braking");
-        moHr.brake(255);
+        Serial.println("MP6550 braking");
+        moHr.brake();
     }
 
-    void TestSchlitten(motor moSl, CustomServo srvKu, Endstop esSl){
+    void TestSchlitten(MP6550 moSl, ServoExp srvKu, Endstop esSl){
         if(srvKu.attached() == false){
             srvKu.attach();
         }
@@ -122,7 +125,7 @@ namespace testing{  //!Namespace for testing functions
             while(esSl.read() == 0){
                 delay(10);
             }
-            moSl.brake(speed);
+            moSl.brake();
             delay(DELAY);
         }
 

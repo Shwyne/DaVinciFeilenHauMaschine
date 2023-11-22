@@ -18,7 +18,7 @@ namespace pin {
     const uint8_t SL_VIS = A1;
 
     //*Servo-Motoren:
-    const uint8_t HS_SRV = 9;    //Hammerstop
+    const uint8_t HS_SRV = 6;    //Hammerstop
     const uint8_t KU_SRV = 7;    //Kupplung
 
     //*Stepper:
@@ -53,8 +53,8 @@ namespace pin {
 
     //*DC-Motor-Settings:
     const uint8_t DC_MAXSPEED = 255;    //DC-Motor Max Speed
-    const uint8_t DC_RUN_SPEED = 100;   //DC-Motor Speed while running
-    const uint8_t DC_RS_SPEED = -150;    //DC-Motor Speed while reseting 
+    const short DC_RUN_SPEED = 100;   //DC-Motor Speed while running
+    const short DC_RS_SPEED = -150;    //DC-Motor Speed while reseting 
 
     //*Stepper-Settings:
     const uint8_t STP_INTERFACE = 1;    //Stepper Interface (1 = Driver)
@@ -75,10 +75,10 @@ namespace pos{
     
     //* Servo-Positions:
     
-    const uint8_t HS_1 = 0;   //Hammerstop Position 1
-    const uint8_t HS_2 = 80;  //Hammerstop Position 2
-    const uint8_t KU_1 = 0;   //Kupplung Position 1
-    const uint8_t KU_2 = 90;  //Kupplung Position 2
+    const uint8_t HS_1 = 0;   //Hammerstop Position 1 -> Hammerstop disengaged
+    const uint8_t HS_2 = 80;  //Hammerstop Position 2 -> Hammerstop engaged
+    const uint8_t KU_1 = 0;   //Kupplung Position 1 -> Kupplung disengaged
+    const uint8_t KU_2 = 90;  //Kupplung Position 2 -> Kupplung engaged
     
     //*Stepper-Positions:
     const short STP_1 = 0; //Schild Position 1
