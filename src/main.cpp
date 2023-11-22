@@ -21,14 +21,13 @@ MP6550 moSl(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP);  //Motor Schlitten (In1, In2
 ServoExp srvHs(pin::HS_SRV, SRV_MIN, SRV_MAX);  //Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp srvKu(pin::KU_SRV, SRV_MIN, SRV_MAX);  //Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
 CustomStepper stp(STP_INTERFACE, pin::STP_STP, pin::STP_DIR, pin::STP_SLP, STP_MAXSPEED, STP_ACCEL, pin::SH_HALL, HALL_TRIGGER);    //Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin)
-Endstop esGe(pin::GE_ES_O, pin::GE_ES_U, ES_MODE);   //Endschalter Gewicht: State 1 = Oben, State 2 = Unten
-Endstop esSl(pin::SL_ES_R, pin::SL_ES_L, ES_MODE);    //Endschalter Schlitten: State 1 = Rechts, State 2 = Links
+Endstop esGe(pin::GE_ES_U, pin::GE_ES_O, ES_MODE);   //Endschalter Gewicht: State 2 = Oben, State 1 = Unten
+Endstop esSl(pin::SL_ES_L, pin::SL_ES_R, ES_MODE);    //Endschalter Schlitten: State 2 = Rechts, State 1 = Links
 Hall hallHr(pin::HR_HALL);                      //Hall-Sensor Hammerrad 
 
 //* Testobjects:
 
 int n = 10;
-
 
 void setup() {
 
@@ -104,15 +103,6 @@ void defaults(){
     //* 8. init();
     delay(DELAY);
     inits();
-    
-    
-
-    
-
-    
-
-    
-
     
 }
 
@@ -201,17 +191,17 @@ bool DC2run(){
 }
 
 void couple(){
-    
+        //Check if servos are already in position
         if(srvKu.read() == pos::KU_2 && srvHs.read() == pos::HS_1){
             return;
         }
-    
+        //If hammerstop is in place but it isnt coupled
         else if(srvKu.read() != pos::KU_2 && srvHs.read() == pos::HS_1){
             srvKu.write(pos::KU_2);
             delay(DELAY);
             return;
         }
-
+        //If hammerstop is not in place but it is coupled
         else if(srvKu.read() == pos::KU_2 && srvHs.read() != pos::HS_1){
             
             if(hallHr.read() == HALL_TRIGGER){

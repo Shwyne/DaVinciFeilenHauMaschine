@@ -17,7 +17,7 @@ namespace testing{
     void TestServo(ServoExp srv, Endstop esGe);
     void TestServo(ServoExp srv);
     void TestStepper();
-    void TestES(Endstop es);
+    void TestEndstop(Endstop es);
     void TestHall(Hall hall);
     void TestButton(uint8_t pin);
     

@@ -61,7 +61,7 @@ namespace testing{  //!Namespace for testing functions
         delay(2*DELAY);
     }
 
-    void TestHammer(MP6550 moHr, ServoExp srvHs, Endstop esGe, Hall hallHr){
+    void TestHammer(motor moHr, CustomServo srvHs, Endstop esGe, Hall hallHr){
         if(srvHs.attached() == false){
             srvHs.attach();
         }
@@ -129,7 +129,7 @@ namespace testing{  //!Namespace for testing functions
             delay(DELAY);
         }
 
-    }
+    }*/
 
     void TestSchild(AccelStepper step, Hall hallSh){
         int speed = 100;
