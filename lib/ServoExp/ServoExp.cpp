@@ -4,92 +4,64 @@ ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max) {
     
     MIN_ = min;
     MAX_ = max;
-    pos1_ = MIN_;
-    pos2_ = MAX_;
-
+    tolerance_ = 0;
     pin_ = pin;
-}
-
-void ServoExp::setPosData(uint8_t pos1, uint8_t pos2){
-    
-    //Set pos1 so it doesn't exceed min or max
-    if(pos1 > MAX_) pos1 = MAX_;
-    else if(pos1 < MIN_) pos1 = MIN_;
-
-    //Set pos2 so it doesn't exceed min or max
-    if(pos2 > MAX_) pos2 = MAX_;
-    else if(pos2 < MIN_) pos2 = MIN_;
-
-    //Attributes of object are set to parameters:
-    pos1_ = pos1;
-    pos2_ = pos2;
 }
 
 void ServoExp::attach() {
 
-    //Attach servo to pin:
-    Servo::attach(pin_);
-
-    //Set target position to current position:
-    if(posTarg_ == -1){
-        posTarg_ = read();
-    }
+    Servo::attach(pin_); //Attach servo to pin
+    posTarg_ = read(); //Set target position to current position
 }
 
 void ServoExp::run(uint8_t angle) {
 
-    //Check if angle is in range and if not, corrects it:
-    if(angle > MAX_)
-        angle = MAX_;
-    else if(angle < MIN_)
-        angle = MIN_;
+    posTarg_ = constrain(angle, MIN_, MAX_); //Check if angle is in range and if not, corrects it
+    Servo::write(posTarg_);  //Write target position to servo
+}
 
-    //Set target position:
-    posTarg_ = angle;
-
-    //Write target position to servo:
-    Servo::write(posTarg_);
+void ServoExp::setTolerance(uint8_t tolerance) {
+    // Set tolerance for target position. If tolerance is 0, target position must be reached exactly.
+    // Maximum is half of the angle range.
+    tolerance_ = constrain(tolerance, 0, abs(MAX_ - MIN_)/2);
 }
 
 bool ServoExp::reachedTarget() {
 
-    //Check if target position is reached:
-    return (posTarg_ == read()) ? true : false;
-}
-
-void ServoExp::pos1() {
+    //Check if target position is reached (with tolerance)
+    return (abs(read() - posTarg_) <= tolerance_);
     
-    posTarg_ = pos1_;
-    write(pos1_);
-}
-
-void ServoExp::pos2() {
-    
-    posTarg_ = pos2_;
-    write(pos2_);
-}
-
-uint8_t ServoExp::getPosTarg() {
-
-    return posTarg_;
 }
 
 void ServoExp::printData() {
     
-    Serial.println("Pin: " + String(pin_));
-    
-    Serial.println("Current Position: " + String(read()));
-    Serial.println("Target Position: " + String(posTarg_));
-    Serial.println(String((reachedTarget()) ? "Target Position reached" : "Target Position not reached"));
-    
-    Serial.println("Minimum Angle: " + String(MIN_));
-    Serial.println("Maximum Angle: " + String(MAX_));
-    
-    Serial.println("Position 1: " + String(pos1_));
-    Serial.println("Position 2: " + String(pos2_));
+    Serial.println("Servo-Data:");
+    Serial.println("\n----------------------");
+    Serial.print(" Control-Pin: ");
+    Serial.println(pin_);
+    Serial.print(" Current Angle: ");
+    Serial.print(read());
+    Serial.println("°");
+    Serial.print(" Target Angle: ");
+    Serial.print(posTarg_);
+    Serial.println("°");
+    Serial.print(" Tolerance: ");
+    Serial.print(tolerance_);
+    Serial.println("°");
+    if(reachedTarget() == true){
+        Serial.println(" Target Position reached.");
+    }
+    else{
+        Serial.println(" Target Position not reached.");
+    }
+    Serial.print(" Minimum Angle: ");
+    Serial.print(MIN_);
+    Serial.println("°");
+    Serial.print(" Maximum Angle: ");
+    Serial.print(MAX_);
+    Serial.println("°");
 }
 
 ServoExp::~ServoExp() {
-    
-    detach();
+    Servo::detach();
 }
