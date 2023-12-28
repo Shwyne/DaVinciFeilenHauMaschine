@@ -8,7 +8,6 @@
 #include <A4988.h>   //Stepper Driver Library
 #include <DRV8825.h> //Stepper Driver Library
 
-
 //==========================================================================================================================
 
 DC_Motor_Driver::MP6550 SLdc(pin::SL_IN1, pin::SL_IN2,
@@ -126,9 +125,9 @@ void pos3(); // Sign is going to position 3. The position is determined by
 } // namespace step
 
 namespace states {
-void idle(); // Idle state: Waiting for start button
-void run();  // Run state: Running motors till interval is or endstops are
-            // reached
+void idle();  // Idle state: Waiting for start button
+void run();   // Run state: Running motors till interval is or endstops are
+              // reached
 void reset(); // Reset state: Resetting the system if an endstop is reached
 void error(
     ErrCode erCode); // Error state: Throwing an error and trapping the system
@@ -156,12 +155,15 @@ void setup() {
   pinMode(pin::GO_LED, OUTPUT); // Sets Go-LED to output
 
   Serial.print(SLes.read());
-  dsetup();
+  dsetup(); //! Replace with code of dsetup() in final version
 }
 
-void loop() { dloop(); }
+void loop() {
+  dloop(); //! Replace with code of dloop() in final version
+}
 
-void dsetup() {
+void inline dsetup() { //! For prototyping - delete if not needed anymore and
+                       //! move code to setup()
   //* Sign-Stepper Setup:
   SGst.begin(STP_RPM, STP_MODE);
   //* Servo-Setup:
@@ -183,8 +185,9 @@ void dsetup() {
     currentState = ERROR;
 }
 
-void dloop() { //! For prototyping - delete if not needed anymore and move code
-               //! to loop()
+void inline dloop() { //! For prototyping - delete if not needed anymore and
+                      //! move code
+                      //! to loop()
 
   if (lastState != currentState) {
     firstExec = 1;
@@ -385,7 +388,7 @@ void decouple() {
     Serial.println(". Trying to get back to normal position.");
     uint8_t n = 0;
     //*2a. if yes, then trying n times to get back to normal coupling position.
-    //If it fails, throw error.
+    // If it fails, throw error.
     while (true) {
       COsv.write(EN);
       delay(DELAY_4);
@@ -410,7 +413,7 @@ void decouple() {
   if (COsv.read() - DIS > RANGE) {
     uint8_t n = 0;
     //*4a. if not, then trying n times to get back to normal coupling position.
-    //If it fails, throw error.
+    // If it fails, throw error.
     while (true) {
       COsv.write(DIS);
       delay(DELAY_4);
@@ -438,7 +441,7 @@ void couple() {
   if (abs(COsv.read() - EN) >= RANGE) {
     uint8_t n = 0;
     //*4a. if no, then trying n times to get back to normal coupling position.
-    //If it fails, throw error.
+    // If it fails, throw error.
     while (true) {
       COsv.write(EN);
       delay(DELAY_4);
@@ -543,7 +546,7 @@ void hammergo() {
     }
   }
   //* 4. Run motor for a short period of time to release flap (sometimes the
-  //flap is getting stuck)
+  // flap is getting stuck)
   Serial.println("Running Motor to realease flap.");
   HWdc.run(HR::SPEED);
   delay(100);
