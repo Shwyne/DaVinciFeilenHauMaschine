@@ -3,10 +3,11 @@
 #include "ServoExp.hpp"        //Custom Servo Library -> depends on Servo.h
 #include "config.hpp"          //Config file -> Pins, settings, etc.
 #include <Arduino.h>           //Arduino Library
-
-// #include "Testfunctions.hpp"     //Testfunctions
+#include "Testfunctions.hpp"     //Testfunctions
+#include "Functions.hpp"        //Functions
 #include <A4988.h>   //Stepper Driver Library
 #include <DRV8825.h> //Stepper Driver Library
+#include "Error_Handling.hpp" //Error Handling Library
 
 //==========================================================================================================================
 
@@ -41,57 +42,17 @@ Sensor::HallSwitch
 
 //==========================================================================================================================
 
-enum class ErrCode : uint8_t {
-  NO_ERROR,   // No Error
-  HW_TIMEOUT, // Timeout Hammerwheel: Occurs if the Hall cant detect the magnets
-              // for engaging the hammerstop. Hardware to check: Hall-Sensor,
-              // DC-Motor, DC-Driver, Arduino, Connections
-  SG_TIMEOUT, // Timeout Sign: Occurs if the Hall cant detect the magnets for
-              // nulling the sign-stepper. Hardware to check: Hall-Sensor,
-              // Stepper-Driver, Stepper, Arduino, Connections
-  WG_TIMEOUT, // Timeout Weight: Occurs if one of the Endstops should've been
-              // triggered but is not. Hardware to check: Endstops, DC-Motor,
-              // DC-Driver, Arduino, Connections
-  SL_TIMEOUT, // Timeout Slider: Occurs if one of the Endstops should've been
-              // triggered but is not. Hardware to check: Endstops, DC-Motor,
-              // DC-Driver, Arduino, Connections
-  STPDRV_NOT_CONNECTED, // Stepper-Driver not connected: The DRV8825 is pulling
-                        // the ?-Pin to high. If the driver isnt present the
-                        // arduino reads low. Hardware to check: Stepper-Driver,
-                        // Arduino, Connections
-  WG_OVERCURRENT, // Overcurrent Weight-Motor: Occurs if the current of the
-                  // DC-Motor is too high. (Only implemented, if a VISEN-Pin is
-                  // given): Hardware to check: DC-Motor, DC-Driver
-  SL_OVERCURRENT, // Overcurrent Slider-Motor: Occurs if the current of the
-                  // DC-Motor is too high. (Only implemented, if a VISEN-Pin is
-                  // given): Hardware to check: DC-Motor, DC-Driver
-  COUP_NOT_ATTACHED, // Servo for coupling not attached: Occurs if the servo is
-                     // not attached. Hardware to check: Servo, Arduino,
-                     // Connections
-  COUP_NOT_IN_POS, // Servo for coupling not in expected position: Occurs if the
-                   // servo is not in the position it should be. Hardware to
-                   // check: Servo, Arduino, Connections
-  HS_NOT_ATTACHED, // Servo for hammerstop not attached: Occurs if the servo is
-                   // not attached. Hardware to check: Servo, Arduino,
-                   // Connections
-  HS_NOT_IN_POS, // Servo for hammerstop not in expected position: Occurs if the
-                 // servo is not in the position it should be. Hardware to
-                 // check: Servo, Arduino, Connections
-  UNDEFINED // Undefined Error: Occurs if an error is thrown but not defined in
-            // the enum class.
-};
-
 ErrCode erCode =
     ErrCode::NO_ERROR; // Error Code for Error Handling. Default: NO_ERROR
-void printError(ErrCode erCode); // Prints the error code to the serial monitor
+
                                  // with a short description.
 
 //==========================================================================================================================
 
-unsigned long ctime = 0; // Used for several short use timers
-unsigned long itime = 0; // Used for running interval
-unsigned long Wtime = 0; // Used for Weight-Timeout calculations
-unsigned long Stime = 0; // Used for Slider-Timeout calculations
+uint32_t ctime = 0; // Used for several short use timers
+uint32_t itime = 0; // Used for running interval
+uint32_t Wtime = 0; // Used for Weight-Timeout calculations
+uint32_t Stime = 0; // Used for Slider-Timeout calculations
 
 enum MachineState : uint8_t {
   IDLE,
@@ -138,28 +99,47 @@ void error(
 void dloop();
 void dsetup();
 
-bool ReachedTimer();
+bool ReachedTimer() {
+  if (millis() - itime >= INTERVAL) {
+    itime = millis();
+    return true;
+  }
+  return false;
+}
 
 //==========================================================================================================================
 
 void setup() {
-
+  
   //* Serial-Setup:
   Serial.begin(SERIAL_BPS); // Starts Serial Connection between Arduino and PC
                             // via USB -> Baudrate = Bits per second (Bps)
-  Serial.println("Serial connection established.");
+  delay(100); // Waits for Serial connection to be established
+  Serial.println("\nSerial connection established.");
+  Serial.println("Starting Setup.");
 
   //* Go-Button-Setup:
   pinMode(pin::GO_BUT,
           INPUT_PULLUP);        // Sets Go-Button to input with pullup resistor
   pinMode(pin::GO_LED, OUTPUT); // Sets Go-LED to output
-
-  Serial.print(SLes.read());
-  dsetup(); //! Replace with code of dsetup() in final version
+  //dsetup(); //! Replace with code of dsetup() in final version
+  Serial.println("Setup finished.");
+  Serial.println("------------------------------------");
 }
 
 void loop() {
-  dloop(); //! Replace with code of dloop() in final version
+  Serial.print("Waiting for Go-Button.");
+  ctime = millis();
+  while(digitalRead(pin::GO_BUT) != GO_TRIGGER) {
+    delay(10);
+    if(millis() - ctime > 500) {
+      ctime = millis();
+      Serial.print(".");
+    }
+  }
+  Serial.println();
+  measure::MagnetsHR(HWdc, HRha, 3, 255);   //3 Turns at 255 speed
+  //dloop(); //! Replace with code of dloop() in final version
 }
 
 void inline dsetup() { //! For prototyping - delete if not needed anymore and
@@ -214,7 +194,7 @@ void inline dloop() { //! For prototyping - delete if not needed anymore and
     break;
   }
   if (erCode != ErrCode::NO_ERROR) {
-    printError(erCode);
+    //printError(erCode);
     currentState = ERROR;
   }
 }
@@ -364,7 +344,7 @@ void reset() {
 }
 
 void error(ErrCode erCode) {
-  printError(erCode);
+  //printError(erCode);
   while (true) {
     digitalWrite(pin::GO_LED, HIGH);
     delay(200);
@@ -374,295 +354,3 @@ void error(ErrCode erCode) {
 }
 } // namespace states
 
-//------------------------------------------------
-
-namespace serv {
-
-void decouple() {
-  using namespace COUP;
-  //* 1. Check if Servo was coupled to far before.
-  Serial.println("Checking if Servo.read() > ENGAGED.");
-  if (COsv.read() - EN > RANGE) {
-    Serial.print("Servo is at Postion: ");
-    Serial.println(COsv.read());
-    Serial.println(". Trying to get back to normal position.");
-    uint8_t n = 0;
-    //*2a. if yes, then trying n times to get back to normal coupling position.
-    // If it fails, throw error.
-    while (true) {
-      COsv.write(EN);
-      delay(DELAY_4);
-      if (COsv.read() - EN <= RANGE)
-        break;
-      if (n >= TriesBeforeError) {
-        Serial.print("Couldnt recover Postion after ");
-        Serial.print(TriesBeforeError);
-        Serial.println(" tries.");
-        erCode = ErrCode::COUP_NOT_IN_POS;
-        return;
-      }
-      n++;
-    }
-  }
-  //* 2. Decouple
-  Serial.println("Decoupling.");
-  COsv.write(DIS);
-  delay(DELAY_4);
-  //* 3. Check if servo ran to position
-  Serial.println("Checking if Coupling is disengaged.");
-  if (COsv.read() - DIS > RANGE) {
-    uint8_t n = 0;
-    //*4a. if not, then trying n times to get back to normal coupling position.
-    // If it fails, throw error.
-    while (true) {
-      COsv.write(DIS);
-      delay(DELAY_4);
-      if (COsv.read() - DIS <= RANGE)
-        break;
-      if (n >= TriesBeforeError) {
-        Serial.print("Couldnt recover Postion after ");
-        Serial.print(TriesBeforeError);
-        Serial.println(" tries.");
-        erCode = ErrCode::COUP_NOT_IN_POS;
-        return;
-      }
-      n++;
-    }
-  } else
-    Serial.println("Coupling is disengaged.");
-  return;
-}
-
-void couple() {
-  using namespace COUP;
-  //* 1. Couple
-  COsv.write(EN);
-  //* 2. Check if servo ran to position
-  if (abs(COsv.read() - EN) >= RANGE) {
-    uint8_t n = 0;
-    //*4a. if no, then trying n times to get back to normal coupling position.
-    // If it fails, throw error.
-    while (true) {
-      COsv.write(EN);
-      delay(DELAY_4);
-      if (abs(COsv.read() - EN) <= RANGE)
-        break;
-      if (n >= TriesBeforeError) {
-        Serial.print("Couldnt recover Postion after ");
-        Serial.print(TriesBeforeError);
-        Serial.println(" tries.");
-        erCode = ErrCode::COUP_NOT_IN_POS;
-        return;
-      }
-      n++;
-    }
-  }
-  return;
-}
-void hammerstop() {
-  using namespace HS;
-  //* 1. Check if Hammerstop is already engaged
-  Serial.println("Checking if Hammerstop is engaged already.");
-  if (abs((HSsv.read() - ON)) <= RANGE) {
-    Serial.println("ERROR: Hammerstop is already engaged.");
-    erCode = ErrCode::HS_NOT_IN_POS;
-    return;
-  }
-  // Loop for trying n (5) times before throwing an error.
-  Serial.println(
-      "Hammerstop is not engaged. Finding correct postion to engage.");
-  for (int n = 0; n < 5; n++) {
-    //* 2. Find position for hammerstop to engage
-    HWdc.run(HR::SPEED);
-    delay(200);
-    ctime = millis();
-    while (HRha.read() == HALL_TRIGGER) {
-      delay(4);
-      if (millis() - ctime >= HALL_TIMEOUT) {
-        Serial.println("ERROR: Timeout Hall (1st flank).");
-        erCode = ErrCode::HW_TIMEOUT;
-        return;
-      }
-    }
-    ctime = millis();
-    while (HRha.read() != HALL_TRIGGER) {
-      delay(4);
-      if (millis() - ctime >= HALL_TIMEOUT) {
-        Serial.println("ERROR: Timeout Hall in (2nd flank).");
-        erCode = ErrCode::HW_TIMEOUT;
-        return;
-      }
-    }
-    Serial.println("Postion found. Braking.");
-    //* 3. braking motor at correct position
-    // TODO: Finetune the timing. (maybe 100ms)
-    HWdc.brake();
-    delay(DELAY_2);
-    //* 4. Engage Hammerstop
-    Serial.println("Engaging Hammerstop.");
-    HSsv.write(ON);
-    delay(DELAY_4);
-    //* 5. Check if Hammerstop is engaged
-    Serial.println("Checking if Hammerstop is engaged correctly.");
-    if (abs(HSsv.read() - ON) <= RANGE) {
-      Serial.println("Hammerstop is engaged correctly. DONE.");
-      return;
-    } else if (n < 4)
-      Serial.println(
-          "ERROR: Hammerstop is not engaged correctly. Trying again");
-  }
-  erCode = ErrCode::HS_NOT_IN_POS;
-  return;
-}
-
-void hammergo() {
-  using namespace HS;
-  //* 1. Check if hammerstop is already disengaged
-  Serial.println("Checking if Hammerstop is disengaged already.");
-  if (abs(HSsv.read() - OFF) <= RANGE) {
-    Serial.println("Hammerstop is already disengaged. DONE.");
-    return; //?No Error needed, cuz there is no damage. Maybe throw warning.
-  }
-  // Loop for trying n (5) times before throwing an error.
-  Serial.println("Hammerstop is engaged. Disengaging.");
-  HSsv.write(OFF);
-  delay(DELAY_4);
-  if (HSsv.read() - OFF <= RANGE) {
-    for (int n = 0; n < 5; n++) {
-      //* 2. Disengage Hammerstop
-      HSsv.write(OFF);
-      delay(DELAY_4);
-      //* 3. Check if Hammerstop is disengaged (now)
-      Serial.println("Checking if Hammerstop is disengaged correctly.");
-      if (HSsv.read() - OFF <= RANGE)
-        break;
-      else if (n < 4)
-        Serial.println(
-            "ERROR: Hammerstop is not disengaged correctly. Trying again");
-      else if (n == 4) {
-        erCode = ErrCode::HS_NOT_IN_POS;
-        return;
-      }
-    }
-  }
-  //* 4. Run motor for a short period of time to release flap (sometimes the
-  // flap is getting stuck)
-  Serial.println("Running Motor to realease flap.");
-  HWdc.run(HR::SPEED);
-  delay(100);
-  HWdc.brake();
-  Serial.println("Hammerstop is disengaged. DONE.");
-  return;
-}
-
-} // namespace serv
-
-namespace step {
-
-uint8_t pos = 1;
-
-void pos1() {
-  ctime = millis();
-  while (SGha.read() != HALL_TRIGGER) {
-    SGst.move(1);
-    if (millis() - ctime >= HALL_TIMEOUT) {
-      Serial.println("ERROR: Timeout Hall (1st flank).");
-      erCode = ErrCode::SG_TIMEOUT;
-      return;
-    }
-  }
-  pos = 1;
-}
-
-void pos2() {
-  if (pos == 1)
-    SGst.move(STP_POS);
-  else if (pos == 3)
-    SGst.move(-STP_POS);
-  pos = 2;
-}
-
-void pos3() {
-  if (pos == 2)
-    SGst.move(STP_POS);
-  else if (pos == 1)
-    SGst.move(-STP_POS);
-  pos = 3;
-}
-} // namespace step
-
-bool ReachedTimer() {
-  if (millis() - itime >= INTERVAL) {
-    Serial.println("Interval reached. Going to IDLE.");
-    return true;
-  } else
-    return false;
-}
-
-void printError(ErrCode erCode) {
-  switch (erCode) {
-  case ErrCode::NO_ERROR:
-    Serial.println("No Error.");
-    break;
-  case ErrCode::HW_TIMEOUT:
-    Serial.println("TIMEOUT - Hammerwheel: Occurs if the Hall cant detect the "
-                   "magnets for engaging the hammerstop. Hardware to check: "
-                   "Hall-Sensor, DC-Motor, DC-Driver, Arduino, Connections");
-    break;
-  case ErrCode::SG_TIMEOUT:
-    Serial.println(
-        "TIMEOUT - Sign: Occurs if the Hall cant detect the magnets for "
-        "nulling the sign-stepper. Hardware to check: Hall-Sensor, "
-        "Stepper-Driver, Stepper, Arduino, Connections");
-    break;
-  case ErrCode::WG_TIMEOUT:
-    Serial.println("TIMEOUT - Weight: Occurs if one of the Endstops should've "
-                   "been triggered but is not. Hardware to check: Endstops, "
-                   "DC-Motor, DC-Driver, Arduino, Connections");
-    break;
-  case ErrCode::SL_TIMEOUT:
-    Serial.println("TIMEOUT - Slider: Occurs if one of the Endstops should've "
-                   "been triggered but is not. Hardware to check: Endstops, "
-                   "DC-Motor, DC-Driver, Arduino, Connections");
-    break;
-  case ErrCode::STPDRV_NOT_CONNECTED:
-    Serial.println(
-        "NOT CONNECTED - Stepper-Driver: The DRV8825 is pulling the ?-Pin to "
-        "high. If the driver isnt present the arduino reads low. Hardware to "
-        "check: Stepper-Driver, Arduino, Connections");
-    break;
-  case ErrCode::WG_OVERCURRENT:
-    Serial.println("OVERCURRENT - Weight-Motor: Occurs if the current of the "
-                   "DC-Motor is too high. (Only implemented, if a VISEN-Pin is "
-                   "given): Hardware to check: DC-Motor, DC-Driver");
-    break;
-  case ErrCode::SL_OVERCURRENT:
-    Serial.println("OVERCURRENT - Slider-Motor: Occurs if the current of the "
-                   "DC-Motor is too high. (Only implemented, if a VISEN-Pin is "
-                   "given): Hardware to check: DC-Motor, DC-Driver");
-    break;
-  case ErrCode::COUP_NOT_ATTACHED:
-    Serial.println(
-        "NOT ATTACHED - Servo for coupling : Occurs if the servo is not "
-        "attached. Hardware to check: Servo, Arduino, Connections");
-    break;
-  case ErrCode::COUP_NOT_IN_POS:
-    Serial.println("NOT IN POS - Servo for coupling: not in expected position "
-                   "- Occurs if the servo is not in the position it should be. "
-                   "Hardware to check: Servo, Arduino, Connections");
-    break;
-  case ErrCode::HS_NOT_ATTACHED:
-    Serial.println(
-        "NOT ATTACHED - Servo for hammerstop: Occurs if the servo is not "
-        "attached. Hardware to check: Servo, Arduino, Connections");
-    break;
-  case ErrCode::HS_NOT_IN_POS:
-    Serial.println("NOT IN POS - Servo for hammerstop: not in expected "
-                   "position - Occurs if the servo is not in the position it "
-                   "should be. Hardware to check: Servo, Arduino, Connections");
-    break;
-  case ErrCode::UNDEFINED:
-    Serial.println("UNDEFINED ERROR. Check manual for more help.");
-    break;
-  }
-}

@@ -4,7 +4,7 @@
 
 namespace testComp { //*Testfunctions for components
 
-void TestDC(MP6550 mdc) {
+void TestDC(DC_Motor_Driver::MP6550 mdc) {
   Serial.println("\nTEST: DC-Motor");
   Serial.println("----------------------");
   mdc.printData();
@@ -96,24 +96,24 @@ void TestServo(ServoExp srv, uint8_t Butpin, uint8_t pos1, uint8_t pos2) {
   Serial.println("----------------------\n");
   return;
 }
-void TestStepper(DRV8825 stp, bool hallInUse) {
+void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
   Serial.println("Test: Stepper");
   Serial.println("----------------------");
   delay(1000);
   if (hallInUse) {
     Serial.println("Stepper to Home.");
-    while (SGha.read() != HALL_TRIGGER) {
-      SGst.move(1);
+    while (hall.read() != true) {
+      stp.move(1);
     }
   } else {
-    Serial.println("No Hall Sensor in use. Pos1 = current position.")
+    Serial.println("No Sensor::Hall Sensor in use. Pos1 = current position.");
   }
   delay(1000);
   Serial.println("Stepper to Pos 2.");
-  SGst.move(STP_POS);
+  stp.move(STP_POS);
   delay(1000);
   Serial.println("Stepper to Pos 3.");
-  SGst.move(STP_POS);
+  stp.move(STP_POS);
   delay(1000);
   Serial.println("Test: Done.");
   Serial.println("----------------------\n");
@@ -122,7 +122,7 @@ void TestStepper(DRV8825 stp, bool hallInUse) {
 } // namespace testComp
 
 namespace testFunc {
-void TestHammer(MP6550 HRdc, ServoExp HSsv, Endstop WGes, Hall hallHr) {
+void TestHammer(DC_Motor_Driver::MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallSwitch hallHr) {
   if (HSsv.attached() == false) {
     HSsv.attach();
   }
@@ -137,25 +137,29 @@ void TestHammer(MP6550 HRdc, ServoExp HSsv, Endstop WGes, Hall hallHr) {
   delay(1000);
 
   Serial.println("Waiting for weight to reach bottom.");
-  WGes.waitUntil(Weight::BOTTOM);
+  while(WGes.read() != Weight::BOTTOM) {
+    delay(10);
+  }
 
   Serial.println("Weight reached bottom, motor is braking.");
   HRdc.brake();
   delay(DELAY);
 
   Serial.println("Engaging Hammerstop.");
-  serv::decouple();
+  serv::hammerstop();
 
   Serial.println("Rewinding the Weight.");
   HRdc.run(HR::RS_SPEED);
-  WGes.waitUntil(Weight::TOP);
+  while(WGes.read() != Weight::BOTTOM) {
+    delay(10);
+  }
 
   Serial.println("Weight reached the top, motor is braking.");
   HRdc.brake();
-  serv::couple();
+  serv::hammergo();
 }
 
-void TestSchlitten(MP6550 moSl, ServoExp KUsv, Endstop esSl) {
+void TestSchlitten(DC_Motor_Driver::MP6550 moSl, ServoExp KUsv, Sensor::Endstops esSl) {
   if (KUsv.attached() == false) {
     KUsv.attach();
   }
@@ -191,17 +195,70 @@ void TestSchild(DRV8825 stp, bool hallInUse) {
 
   if (hallInUse) {
     Serial.println("Stepper to Home.");
-    step::home();
+    step::pos1();
     delay(DELAY);
   }
 
   Serial.println("Stepper to Pos 2.");
-  step::nextPos();
+  step::pos2();
   delay(DELAY);
 
   Serial.println("Stepper to Pos 3.");
-  step::nextPos();
+  step::pos3();
   delay(2 * DELAY);
 }
 
 } // namespace testFunc
+
+namespace measure {
+
+void MagnetsHR(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed) {
+  constexpr uint8_t nMagnets = 6;     //Number of magnets on the DC-Motor
+  uint32_t aTT_Timer = 0;             //Timer for the averageTriggerTime
+  bool hallTriggered = false;         //Flag to check if the Sensor::Hall-sensor is triggered
+  bool magnetPassed = false;          //Flag to check if a magnet has passed the Sensor::Hall-sensor
+  
+  mdc.run(speed);
+  while(hall.read() != true){
+    delay(1);
+  }
+  uint32_t lastTime = millis();    //Storing the time for the last time a Sensor::Hall-sensor was triggered to calculate the time between two magnets
+  for(int m = 0; m<turns; m++){
+    Serial.println("----------");
+    Serial.print("Turn ");
+    Serial.print(m+1);
+    Serial.println(":");
+    Serial.println("----------");
+    for(int n = 0; n<nMagnets; n++){
+      magnetPassed = false;
+      hallTriggered = false;
+      while(magnetPassed == false){
+        if(hall.read() == true && hallTriggered == false){
+          Serial.print("Magnet ");
+          Serial.print(n+1);
+          Serial.print(" Delta_t_m: ");
+          if(n == 0 && m == 0){
+            Serial.print("n/a | ");
+          }
+          else{
+            Serial.print(millis() - lastTime);
+            Serial.print(" ms | ");
+          }
+          lastTime = millis();
+          aTT_Timer = millis();
+          hallTriggered = true;
+        }
+        else if(hall.read() != true && hallTriggered == true){
+          Serial.print("Delta_t_on: ");
+          Serial.print(millis() - aTT_Timer);
+          Serial.println(" ms.");
+          magnetPassed = true;
+        }
+      }
+    }
+  }
+  mdc.brake();
+}
+
+
+} // namespace measure
