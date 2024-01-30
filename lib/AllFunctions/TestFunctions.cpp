@@ -1,4 +1,4 @@
-#include "Testfunctions.hpp"
+#include "AllFunctions.hpp"
 
 // TODO: Updating functions to library changes
 
@@ -96,6 +96,7 @@ void TestServo(ServoExp srv, uint8_t Butpin, uint8_t pos1, uint8_t pos2) {
   Serial.println("----------------------\n");
   return;
 }
+
 void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
   Serial.println("Test: Stepper");
   Serial.println("----------------------");
@@ -110,10 +111,10 @@ void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
   }
   delay(1000);
   Serial.println("Stepper to Pos 2.");
-  stp.move(STP_POS);
+  stp.move(STP::POS);
   delay(1000);
   Serial.println("Stepper to Pos 3.");
-  stp.move(STP_POS);
+  stp.move(STP::POS);
   delay(1000);
   Serial.println("Test: Done.");
   Serial.println("----------------------\n");
@@ -133,7 +134,7 @@ void TestHammer(DC_Motor_Driver::MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WG
   delay(1000);
 
   Serial.println("Starting Motor.");
-  HRdc.run(HR::SPEED);
+  HRdc.run(HW::SPEED);
   delay(1000);
 
   Serial.println("Waiting for weight to reach bottom.");
@@ -143,13 +144,13 @@ void TestHammer(DC_Motor_Driver::MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WG
 
   Serial.println("Weight reached bottom, motor is braking.");
   HRdc.brake();
-  delay(DELAY);
+  delay(1000);
 
   Serial.println("Engaging Hammerstop.");
   serv::hammerstop();
 
   Serial.println("Rewinding the Weight.");
-  HRdc.run(HR::RS_SPEED);
+  HRdc.run(HW::RS_SPEED);
   while(WGes.read() != Weight::BOTTOM) {
     delay(10);
   }
@@ -170,26 +171,27 @@ void TestSchlitten(DC_Motor_Driver::MP6550 moSl, ServoExp KUsv, Sensor::Endstops
   if (esSl.read() != 0) {
     if (esSl.read() == 1) {
       Serial.println("Schlitten ist links");
-      delay(DELAY);
+      delay(1000);
       moSl.run(speed);
     } else if (esSl.read() == 2) {
       Serial.println("Schlitten ist rechts");
-      delay(DELAY);
+      delay(1000);
       moSl.run(-speed);
     }
   } else {
     Serial.println("Kein Endschalter erreicht");
-    delay(DELAY);
+    delay(1000);
     moSl.run(speed);
     while (esSl.read() == 0) {
       delay(10);
     }
     moSl.brake();
-    delay(DELAY);
+    delay(1000);
   }
 }
 
 void TestSchild(DRV8825 stp, bool hallInUse) {
+  constexpr uint16_t DELAY = 1000;
 
   Serial.println("Testing Schild\n-----------------");
 
@@ -206,6 +208,97 @@ void TestSchild(DRV8825 stp, bool hallInUse) {
   Serial.println("Stepper to Pos 3.");
   step::pos3();
   delay(2 * DELAY);
+}
+
+void TestWeight(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes, bool infinite){
+  if(WGes.read() == Weight::TOP){
+    Serial.println("Weight is TOP");
+    HWdc.run(HW::SPEED);
+  }
+  else{
+    Serial.println("Weight is NOT top");
+    HWdc.run(HW::RS_SPEED);
+  }
+  while(infinite == true){
+    if(WGes.read() == Weight::TOP){
+      Serial.println("Top triggered!");
+      HWdc.run(HW::SPEED);
+      delay(500);
+    }
+    else if(WGes.read() == Weight::BOTTOM){
+      Serial.println("Bottom triggered!");
+      HWdc.run(HW::RS_SPEED);
+      delay(500);
+    }
+  } 
+}
+
+//TODO: Error Checking not consistent
+void TestWeightError(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes,Sensor::HallSwitch HWhall, bool infinite){
+  erCode = ErrCode::NO_ERROR;
+  bool top = 0;
+  bool bottom = 0;
+  bool firstrun = 1;
+  int n = 0;
+  bool Hall_Triggered = false;
+  constexpr uint8_t min_magnets = 14;
+  constexpr uint8_t max_magnets = 16;
+
+  if(WGes.read() == Weight::TOP){
+    Serial.println("Weight is TOP");
+    HWdc.run(HW::SPEED);
+  }
+  else{
+    Serial.println("Weight is NOT top");
+    HWdc.run(HW::RS_SPEED);
+  }
+  while(infinite == true){
+    if(erCode != ErrCode::NO_ERROR){
+      Serial.print("Error: ");
+      printError(erCode);
+      HWdc.brake();
+      delay(1000);
+      erCode = ErrCode::NO_ERROR;
+    }
+    else if(HWhall.read() && (Hall_Triggered == false)){
+      //Serial.println("I've found a Magnet! :)");
+      Hall_Triggered = true;
+      n++;
+    }
+    else if(n > max_magnets){
+        erCode = ErrCode::WG_TIMEOUT;
+    }
+    else if (!HWhall.read() && Hall_Triggered == true) Hall_Triggered = false;
+    if(WGes.read() == Weight::TOP && top == 0){
+      if(n< min_magnets && firstrun == 0){
+        erCode = ErrCode::HW_TIMEOUT;
+      }
+      HWdc.brake();
+      delay(500);
+      top = 1;
+      bottom = 0;
+      Serial.println("Top triggered!");
+      Serial.print("n: ");
+      Serial.println(n);
+      HWdc.run(HW::SPEED);
+      n = 0;
+    }
+    else if(WGes.read() == Weight::BOTTOM && bottom == 0){
+      if(n< min_magnets){
+        erCode = ErrCode::HW_TIMEOUT;
+      }
+      firstrun = 0;
+      HWdc.brake();
+      delay(500);
+      top = 0;
+      bottom = 1;
+      Serial.println("Bottom triggered!");
+      Serial.print("n: ");
+      Serial.println(n);
+      HWdc.run(HW::RS_SPEED);
+      n = 0;
+    }
+  }
 }
 
 } // namespace testFunc
@@ -250,8 +343,13 @@ void MagnetsHR(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t tur
         }
         else if(hall.read() != true && hallTriggered == true){
           Serial.print("Delta_t_on: ");
-          Serial.print(millis() - aTT_Timer);
-          Serial.println(" ms.");
+          if(n == 0 && m == 0){
+            Serial.println("n/a");
+          }
+          else{
+            Serial.print(millis() - aTT_Timer);
+            Serial.println(" ms.");
+          }
           magnetPassed = true;
         }
       }
@@ -260,5 +358,48 @@ void MagnetsHR(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t tur
   mdc.brake();
 }
 
-
+/*void TestWeight(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes, Sensor::HallSwitch HWhall, bool infinite){
+  bool top = 0;
+  bool bottom = 0;
+  int n = 0;
+  bool Hall_Triggered = false;
+  if(WGes.read() == Weight::TOP){
+    Serial.println("Weight is TOP");
+    HWdc.run(HW::SPEED);
+  }
+  else{
+    Serial.println("Weight is NOT top");
+    HWdc.run(HW::RS_SPEED);
+  }
+  while(infinite == true){
+    if(HWhall.read() && (Hall_Triggered == false)){
+      //Serial.println("I've found a Magnet! :)");
+      Hall_Triggered = true;
+      n++;
+    }
+    else if (!HWhall.read() && Hall_Triggered == true) Hall_Triggered = false;
+    if(WGes.read() == Weight::TOP && top == 0){
+      HWdc.brake();
+      delay(500);
+      top = 1;
+      bottom = 0;
+      Serial.println("Top triggered!");
+      Serial.print("n: ");
+      Serial.println(n);
+      HWdc.run(HW::SPEED);
+      n = 0;
+    }
+    else if(WGes.read() == Weight::BOTTOM && bottom == 0){
+      HWdc.brake();
+      delay(500);
+      top = 0;
+      bottom = 1;
+      Serial.println("Bottom triggered!");
+      Serial.print("n: ");
+      Serial.println(n);
+      HWdc.run(HW::RS_SPEED);
+      n = 0;
+    }
+  }
+}*/
 } // namespace measure

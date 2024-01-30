@@ -1,102 +1,126 @@
 #pragma once
 
-#include "pins.hpp"
 #include <Arduino.h>
+#include "pins.hpp"
 
-//*Serial-Connection:
-#define SERIAL_BPS 9600 // Serial Baudrate
-
-//*Pause-Settings:
-const int INTERVAL = 30; // Interval time for running in seconds
-
-const int INTER_MS = INTERVAL * 1000; // Transformation to milliseconds
-
-const short DELAY = 1000;    // Default delay for testing purposes
-const short DELAY_2 = 500;   // Default delay for testing purposes
-const uint8_t DELAY_4 = 250; // Default delay for testing purposes
-
-//*Endstop-Settings:
-const uint8_t ES_TRIGGER =
-    0; // Endstop Mode (0 = Pullup, 1 = Pulldown) - default: 0
-
-namespace Weight { // Endstop Weight
-enum esState {
-  UNTRIGGERED = 0, // No Endstops reached
-  TOP = 2,         // Top Endstop triggered
-  BOTTOM = 1,      // Bottom Endstop triggered
-};
+//*Software-Settings:
+//Serial Connection to Arduino (Check Device-Manager -> COM -> Arduino -> Settings -> Properties -> Port Settings)
+namespace SERIALSET{
+    constexpr int BAUTRATE = 9600;
+    constexpr int DELAY = 1000;
 }
 
-namespace Slider { // Endstop Slider
-enum esState {
-  UNTRIGGERED = 0, // No Endstops reached
-  LEFT = 1,        // Left Endstop triggered
-  RIGHT = 2,       // Right Endstop triggered
-};
+//============================================================
+//*Hardware-Settings:
+
+//Go-Button:
+namespace LED{
+    enum color{
+        OFF = 0,
+        RED = 1,
+        GREEN = 2,
+        BLUE = 3,
+        YELLOW = 4,
+        CYAN = 5,
+        MAGENTA = 6,
+        WHITE = 7,
+    };
 }
 
-//*Hall-Settings:
-const bool HALL_TRIGGER = 0; // Hall-Sensor Trigger State (0 = LOW, 1 = HIGH)
-const uint16_t HALL_TIMEOUT = 4000; // Hall-Sensor Timeout in ms
-//*Go-Button-Settings:
+//----------------------------------------------------
+//Hall-Sensor:
+namespace HALL{
+    constexpr bool TRIGGER = 0;
+    constexpr uint16_t TIMEOUT = 2000;
+}
 
-const uint8_t GO_TRIGGER =
-    0; // Go-Button Trigger (0 = Pullup, 1 = Pulldown) - default: 0
-
-//*DC-Motor-Settings:
-
-const uint8_t DC_MAXSPEED =
-    255; // DC-Motor Max Speed for both motors (PWM-Value)
-
-namespace HR {            //*DC-Motor Hammerwheel
-const bool reversed = 1;  // DC-Motor Direction (0 = Forward, 1 = Backward)
-const int speed = 155;    // DC-Motor Speed while running (PWM-Value)
-const int rs_speed = 255; // DC-Motor Speed while reseting (PWM-Value)
-
-const short SPEED =
-    (reversed) ? -speed : speed; // Changing direction according to reversed
-const short RS_SPEED =
-    (reversed) ? rs_speed
-               : -rs_speed; // Changing direction according to reversed
-} // namespace HR
-namespace SL {            //*DC-Motor Slider
-const bool reversed = 1;  // DC-Motor Direction (0 = Forward, 1 = Backward)
-const int speed = 200;    // DC-Motor Speed while running
-const int rs_speed = 255; // DC-Motor Speed while reseting
-
-const short SPEED =
-    (reversed) ? -speed : speed; // Changing direction according to reversed
-const short RS_SPEED =
-    (reversed) ? rs_speed
-               : -rs_speed; // Changing direction according to reversed
-} // namespace SL
-
-//*Stepper-Settings:
-const uint8_t STP_INTERFACE = 1; // Stepper Interface (1 = Driver)
-const uint8_t STP_MODE = 16; // Stepper Mode (1 = Full Step, 2 = Half Step, 4 =
-                             // Quarter Step, 8 = Eighth Step, ...)
-const short STP_STEPS = 200; // Stepper Steps per Revolution
-const float STP_i = 1.2;     // Stepper to Schild Gear Ratio
-const short STP_POS =
-    short(STP_STEPS / 3 * STP_i) * STP_MODE; // Steps per Position change
-const short STP_RPM = 120; // Stepper Speed in Revolutions/Minute
-
-//*Servo-Settings:
-const uint8_t SRV_MIN = 0;   // Servo min Angle
-const uint8_t SRV_MAX = 180; // Servo max Angle
-
-//* Servo-Positions:
-
+//----------------------------------------------------
+//Hammerwheel Motor:
+namespace HW {
+    constexpr uint8_t MAXSPEED = 255;
+    constexpr bool reversed = 0;
+    constexpr int speed = 180;
+    constexpr int rs_speed = 255;
+    //Tooth Ab = 30
+    //Tooth An = 60
+}
+//Endstops Weight:
+namespace Weight {
+    constexpr bool TRIGGER = 0;
+    enum State {
+        UNTRIGGERED = 0,
+        TOP = 1,
+        BOTTOM = 2,
+};}
+//----------------------------------------------------
+//Slider Motor:
+namespace SL {
+    constexpr uint8_t MAXSPEED = 255;
+    constexpr bool synchronized = 0;
+    constexpr float sync_factor = 1;
+    constexpr bool reversed = 0;
+    constexpr int rs_speed = 255;
+}
+//Endstops Slider:
+namespace Slider {
+    constexpr bool TRIGGER = 0;
+    enum State {
+        UNTRIGGERED = 0,
+        LEFT = 1,
+        RIGHT = 2,
+    };
+}
+//----------------------------------------------------
+//Stepper Motor:
+namespace STP{
+    constexpr uint8_t INTERFACE = 1;
+    constexpr uint8_t MODE = 16;
+    constexpr uint8_t STEPS = 200;
+    constexpr float i = 0.1;
+    constexpr uint8_t RPM = 10;
+}
+//----------------------------------------------------
+//Servo Hammerstop:
 namespace HS {
-const uint8_t OFF = 0;              // Hammerstop off -> not engaged
-const uint8_t ON = 80;              // Hammerstop on -> engaged and blocking
-const uint8_t RANGE = 5;            // Range for position check
-const uint8_t TriesBeforeError = 5; // Trys before error
-} // namespace HS
+    constexpr uint8_t OFF = 0;
+    constexpr uint8_t ON = 80;
+    constexpr uint8_t TOLERANCE = 5;
+    constexpr uint8_t TriesBeforeError = 5;
+    constexpr uint8_t MIN = 0;
+    constexpr uint8_t MAX = 180;
+}
+//Servo Coupling:
 namespace COUP {
+    constexpr uint8_t DIS = 0;
+    constexpr uint8_t EN = 110;
+    constexpr uint8_t TOLERANCE = 3;
+    constexpr uint8_t TriesBeforeError = 5;
+    constexpr uint8_t MIN = 0;
+    constexpr uint8_t MAX = 180;
+}
 
-const uint8_t DIS = 0;              // Coupling disengaged -> No "transmission"
-const uint8_t EN = 90;              // Coupling engaged -> "transmission"
-const uint8_t RANGE = 3;            // Range for position check
-const uint8_t TriesBeforeError = 5; // Trys before error
-} // namespace COUP
+
+
+
+
+
+
+
+//===========================================================================
+//Dont change anything after! It's for the compiler to calculate the values.
+//===========================================================================
+
+namespace HW{
+constexpr short SPEED = (reversed) ? -speed : speed;
+constexpr short RS_SPEED = (reversed) ? rs_speed : -rs_speed;
+}
+
+namespace SL{
+constexpr int speed = (synchronized) ? HW::speed * sync_factor : 255;
+constexpr short SPEED = (reversed) ? -speed : speed;
+constexpr short RS_SPEED = (reversed) ? rs_speed : -rs_speed;
+}
+
+namespace STP{
+constexpr uint8_t POS = uint8_t(STP::STEPS / 3 * STP::i) * STP::MODE;
+}

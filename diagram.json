@@ -116,14 +116,6 @@
       "attrs": { "color": "blue" }
     },
     {
-      "type": "wokwi-led",
-      "id": "led11",
-      "top": 260.8,
-      "left": 263.4,
-      "rotate": 180,
-      "attrs": { "color": "limegreen" }
-    },
-    {
       "type": "wokwi-pushbutton",
       "id": "btn4",
       "top": 15.8,
@@ -145,6 +137,14 @@
       "left": 334.6,
       "rotate": 180,
       "attrs": { "value": "10000000" }
+    },
+    {
+      "type": "wokwi-rgb-led",
+      "id": "rgb1",
+      "top": 268.6,
+      "left": 264.1,
+      "rotate": 180,
+      "attrs": { "common": "cathode" }
     }
   ],
   "connections": [
@@ -164,7 +164,6 @@
     [ "mega:GND.5", "btn2:1.r", "black", [ "v0.95", "h45.4", "v-249.6", "h67.2" ] ],
     [ "btn2:2.r", "mega:51", "magenta", [ "v0.2", "h-57.8", "v259.2" ] ],
     [ "mega:GND.5", "btn1:2.l", "black", [ "v77.75", "h-79.4", "v-35.4" ] ],
-    [ "mega:53", "btn1:1.l", "green", [ "v77.9", "h-89.2" ] ],
     [ "mega:GND.5", "btn5:2.r", "black", [ "v77.75", "h160.6", "v-29" ] ],
     [ "btn5:2.r", "btn6:2.r", "black", [ "h9.8", "v-47.8" ] ],
     [ "btn6:2.r", "btn7:2.r", "black", [ "h9.8", "v-76.6" ] ],
@@ -176,8 +175,6 @@
     [ "led3:A", "mega:11", "blue", [ "v9.6", "h-19.2" ] ],
     [ "led6:A", "mega:2", "blue", [ "v14.4", "h-24.8" ] ],
     [ "btn3:2.r", "led1:C", "black", [ "v0" ] ],
-    [ "mega:GND.5", "led11:C", "black", [ "v77.75", "h-79.4" ] ],
-    [ "led11:A", "mega:52", "green", [ "v0", "h124.8" ] ],
     [ "mega:41", "btn6:1.l", "gold", [ "v1.25", "h83.8" ] ],
     [ "btn4:1.l", "mega:39", "orange", [ "h0" ] ],
     [ "btn4:2.r", "btn7:2.r", "black", [ "h9.8", "v57.8" ] ],
@@ -191,7 +188,12 @@
     [ "btn3:1.r", "r1:1", "magenta", [ "v0" ] ],
     [ "r1:2", "mega:5V", "red", [ "h0", "v219.6" ] ],
     [ "r1:2", "r2:2", "red", [ "h19.2", "v-20.4" ] ],
-    [ "btn2:2.r", "r2:1", "magenta", [ "v0.2", "h-57.8", "v28.8" ] ]
+    [ "btn2:2.r", "r2:1", "magenta", [ "v0.2", "h-57.8", "v28.8" ] ],
+    [ "rgb1:COM", "mega:GND.4", "black", [ "v-18.8", "h107.7" ] ],
+    [ "rgb1:R", "mega:25", "red", [ "v0", "h96" ] ],
+    [ "rgb1:G", "mega:26", "limegreen", [ "v-9.6", "h113.9" ] ],
+    [ "rgb1:B", "mega:27", "blue", [ "v-19.2", "h132.8" ] ],
+    [ "btn1:1.l", "mega:24", "green", [ "h0" ] ]
   ],
   "dependencies": {}
 }

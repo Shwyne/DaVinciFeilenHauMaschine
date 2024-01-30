@@ -65,40 +65,107 @@ void Endstops::printData() {
   Serial.println("-----------------");
 }
 
-Button::Button(uint8_t pin, uint8_t LED, bool triggeredIf) {
-  if (LED != 255) {
-    pinMode(LED, OUTPUT);
-    digitalWrite(LED, LOW);
+Button::Button(uint8_t Butpin, uint8_t Rpin, uint8_t Gpin, uint8_t Bpin) {
+  if(Butpin != 255){
+    this->Butpin = Butpin;
+    pinMode(Butpin, INPUT_PULLUP);
   }
-  pin_ = pin;
-  triggered_ = triggeredIf;
-  if (triggered_ == 0) {
-    pinMode(pin_, INPUT_PULLUP);
-  } else {
-    pinMode(pin_, INPUT);
+  if(Rpin != 255){
+    this->Rpin = Rpin;
+    pinMode(Rpin, OUTPUT);
+    digitalWrite(Rpin, LOW);
   }
+  if(Gpin != 255){
+    this->Gpin = Gpin;
+    pinMode(Gpin, OUTPUT);
+    digitalWrite(Gpin, LOW);
+  }
+  if(Bpin != 255){
+    this->Bpin = Bpin;
+    pinMode(Bpin, OUTPUT);
+    digitalWrite(Bpin, LOW);
+  }
+  return;
 }
 
 bool Button::read() {
-  if (digitalRead(pin_) == triggered_) {
-    return true;
-  } else {
-    return false;
-  }
+  return !digitalRead(Butpin);
 }
 
 void Button::printData() {
   Serial.println("\nButton-Data:");
   Serial.println("----------------------");
-  Serial.print("Pin: ");
-  Serial.println(pin_);
-  Serial.print("Mode: ");
-  Serial.println(triggered_);
-  Serial.println(read() == triggered_ ? "Triggered" : "Untriggered");
+  Serial.print("But-Pin: ");
+  Serial.println(Butpin);
+  Serial.print("R-Pin: ");
+  Serial.println(Rpin);
+  Serial.print("G-Pin: ");
+  Serial.println(Gpin);
+  Serial.print("B-Pin: ");
+  Serial.println(Bpin);
+  Serial.println(read()? "Triggered" : "Untriggered");
   Serial.println("----------------------\n");
   Serial.println("End of Data");
   Serial.println("-----------------");
+  return;
 }
 
-void Button::toggleLED() { digitalWrite(pin_, !digitalRead(pin_)); }
+void Button::updateLED(uint8_t mode){
+  switch(mode){
+    case 0: //off
+        digitalWrite(Rpin, LOW);
+        digitalWrite(Gpin, LOW);
+        digitalWrite(Bpin, LOW);
+        break;
+      case 1: //red
+        digitalWrite(Rpin, HIGH);
+        digitalWrite(Gpin, LOW);
+        digitalWrite(Bpin, LOW);
+        break;
+      case 2: //green
+        digitalWrite(Rpin, LOW);
+        digitalWrite(Gpin, HIGH);
+        digitalWrite(Bpin, LOW);
+        break;
+      case 3: //blue
+        digitalWrite(Rpin, LOW);
+        digitalWrite(Gpin, LOW);
+        digitalWrite(Bpin, HIGH);
+        break;
+      case 4: //yellow
+        digitalWrite(Rpin, HIGH);
+        digitalWrite(Gpin, HIGH);
+        digitalWrite(Bpin, LOW);
+        break;
+      case 5: //cyan
+        digitalWrite(Rpin, LOW);
+        digitalWrite(Gpin, HIGH);
+        digitalWrite(Bpin, HIGH);
+        break;
+      case 6: //magenta
+        digitalWrite(Rpin, HIGH);
+        digitalWrite(Gpin, LOW);
+        digitalWrite(Bpin, HIGH);
+        break;
+      case 7: //white
+        digitalWrite(Rpin, HIGH);
+        digitalWrite(Gpin, HIGH);
+        digitalWrite(Bpin, HIGH);
+        break;
+      default:
+        digitalWrite(Rpin, LOW);
+        digitalWrite(Gpin, LOW);
+        digitalWrite(Bpin, LOW);
+        break;
+    
+  }
+}
+
+void Button::updateLED(uint8_t red, uint8_t green, uint8_t blue){
+  analogWrite(Rpin, red);
+  analogWrite(Gpin, green);
+  analogWrite(Bpin, blue);
+  return;
+}
+
 } // namespace Sensor

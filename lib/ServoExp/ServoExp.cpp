@@ -33,6 +33,12 @@ bool ServoExp::reachedTarget() {
   return (abs(read() - posTarg_) <= tolerance_);
 }
 
+bool ServoExp::isAt(uint8_t angle) {
+
+  // Check if servo is at a specific angle
+  return (abs(read() - angle) <= tolerance_);
+}
+
 void ServoExp::printData() {
 
   Serial.println("Servo-Data:");

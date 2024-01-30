@@ -80,40 +80,22 @@ public:
   void printData();
 };
 
-/**
- * @class Button
- * @brief Represents a button sensor. Theres the possibilty to add the
- * Button-LED if there's one.
- */
 class Button {
 private:
-  uint8_t pin_;    /**< The pin number to which the button is connected. */
-  bool triggered_; /**< Attribute for storing the triggered State (LOW, HIGH) */
+  uint8_t Butpin;
+  uint8_t Rpin;
+  uint8_t Gpin;
+  uint8_t Bpin;
 public:
-  /**
-   * @brief Constructs a Button object.
-   * @param pin The pin number to which the button is connected.
-   * @param LED The pin number to which the LED is connected. Defaults to 255
-   * (no LED).
-   * @param triggeredIf The logic level at which the button is considered
-   * triggeredIf. Defaults to LOW.
-   */
-  Button(uint8_t pin, uint8_t LED = 255, bool triggeredIf = LOW);
+  
+  Button(uint8_t Butpin = 255, uint8_t Rpin = 255, uint8_t Gpin = 255, uint8_t Bpin = 255);
 
-  /**
-   * @brief Reads the current state of the button.
-   * @return true if the button is triggeredIf, false otherwise.
-   */
   bool read();
 
-  /**
-   * @brief Prints the data of the button.
-   */
-  void printData();
+  void updateLED(uint8_t mode); //0 = off, 1 = red, 2 = green, 3 = blue, 4 = yellow, 5 = cyan, 6 = magenta, 7 = white
+  void updateLED(uint8_t red, uint8_t green, uint8_t blue); //Needs PWM-Pins!
 
-  /**
-   * @brief Toggles the state of the LED (if connected).
-   */
-  void toggleLED();
+  void printData();
 };
+
 } // namespace Sensor

@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 namespace pin {
 
@@ -15,7 +16,7 @@ constexpr uint8_t SL_SLP = 2;
 constexpr uint8_t SL_VIS = A1;
 
 //*Servo-Motoren:
-constexpr uint8_t CO_SRV = 6; // Kupplung
+constexpr uint8_t CO_SRV = 5; // Kupplung
 constexpr uint8_t HS_SRV = 7; // Hammerstop
 
 //*Stepper:
@@ -36,11 +37,12 @@ constexpr uint8_t WG_ES_B = 41; // Endstop Weight unten
 constexpr uint8_t SL_ES_L = 43; // Endstop Slide left    //*brown
 constexpr uint8_t SL_ES_R = 45; // Endstop Slide right   //*green
 
-constexpr uint8_t HR_HALL = 49; // Hall-Sensor Hammerwheel
-constexpr uint8_t SG_HALL = 51; // Hall-Sensor Sign
+constexpr uint8_t HR_HALL = 22; // Hall-Sensor Hammerwheel //! 49
+constexpr uint8_t SG_HALL = 23; // Hall-Sensor Sign        //! 51
 
-constexpr uint8_t GO_BUT = 53; // Taster "Go"
-constexpr uint8_t GO_LED = 52; // LED "Go"   //! Change to another pin, 52 cant
-                               // be used in final product.
+constexpr uint8_t GO_BUT = 24; // Taster "Go"
+constexpr uint8_t GO_LED_R = 25; // LED "Go"   
+constexpr uint8_t GO_LED_G = 26; // LED "Go"   
+constexpr uint8_t GO_LED_B = 27; // LED "Go"   
 
 } // namespace pin

@@ -54,6 +54,8 @@ public:
    */
   bool reachedTarget();
 
+  bool isAt(uint8_t angle);
+
   /**
    * @brief Prints the servo data (minimum angle, maximum angle, target
    * position, tolerance).
