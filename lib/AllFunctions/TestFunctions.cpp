@@ -4,7 +4,7 @@
 
 namespace testComp { //*Testfunctions for components
 
-void TestDC(DC_Motor_Driver::MP6550 mdc) {
+void TestDC(MP6550 mdc) {
   Serial.println("\nTEST: DC-Motor");
   Serial.println("----------------------");
   mdc.printData();
@@ -32,7 +32,7 @@ void TestDC(DC_Motor_Driver::MP6550 mdc) {
   mdc.brake();
   delay(1000);
   Serial.println("Disabling motor");
-  mdc.disable();
+  mdc.sleep();
   delay(1000);
   Serial.println("TEST: Done.");
   Serial.println("----------------------\n");
@@ -123,7 +123,7 @@ void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
 } // namespace testComp
 
 namespace testFunc {
-void TestHammer(DC_Motor_Driver::MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallSwitch hallHr) {
+void TestHammer(MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallSwitch hallHr) {
   if (HSsv.attached() == false) {
     HSsv.attach();
   }
@@ -160,7 +160,7 @@ void TestHammer(DC_Motor_Driver::MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WG
   serv::hammergo();
 }
 
-void TestSchlitten(DC_Motor_Driver::MP6550 moSl, ServoExp KUsv, Sensor::Endstops esSl) {
+void TestSchlitten(MP6550 moSl, ServoExp KUsv, Sensor::Endstops esSl) {
   if (KUsv.attached() == false) {
     KUsv.attach();
   }
@@ -210,7 +210,7 @@ void TestSchild(DRV8825 stp, bool hallInUse) {
   delay(2 * DELAY);
 }
 
-void TestWeight(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes, bool infinite){
+void TestWeight(MP6550 HWdc, Sensor::Endstops WGes, bool infinite){
   if(WGes.read() == Weight::TOP){
     Serial.println("Weight is TOP");
     HWdc.run(HW::SPEED);
@@ -234,7 +234,7 @@ void TestWeight(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes, bool infini
 }
 
 //TODO: Error Checking not consistent
-void TestWeightError(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes,Sensor::HallSwitch HWhall, bool infinite){
+void TestWeightError(MP6550 HWdc, Sensor::Endstops WGes,Sensor::HallSwitch HWhall, bool infinite){
   erCode = ErrCode::NO_ERROR;
   bool top = 0;
   bool bottom = 0;
@@ -305,7 +305,36 @@ void TestWeightError(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes,Sensor:
 
 namespace measure {
 
-void MagnetsHR(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed) {
+  void SliderTiming(){
+    if(SLes.read() != Slider::RIGHT){
+    SLdc.run(-255);
+    while(SLes.read() != Slider::RIGHT){
+      delay(1);
+    }
+    SLdc.brake();
+    delay(1000);
+  }
+
+  Go.updateLED(LED::GREEN);
+  while(Go.read() != true){
+    delay(1);
+  }
+  Go.updateLED(LED::CYAN);
+  ctime = millis();
+  SLdc.run(SL::SPEED);
+  while(SLes.read() != Slider::LEFT){
+    delay(1);
+  }
+  long SLIDER = millis()-ctime;
+  SLdc.brake();
+  Serial.print("Time: ");
+  Serial.print(SLIDER);
+  Serial.print(" ms |");
+  Serial.print(SLIDER/1000.0);
+  Serial.print(" s | ");
+  }
+
+void MagnetsHR(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed) {
   constexpr uint8_t nMagnets = 6;     //Number of magnets on the DC-Motor
   uint32_t aTT_Timer = 0;             //Timer for the averageTriggerTime
   bool hallTriggered = false;         //Flag to check if the Sensor::Hall-sensor is triggered
@@ -358,7 +387,7 @@ void MagnetsHR(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t tur
   mdc.brake();
 }
 
-/*void TestWeight(DC_Motor_Driver::MP6550 HWdc, Sensor::Endstops WGes, Sensor::HallSwitch HWhall, bool infinite){
+/*void TestWeight(MP6550 HWdc, Sensor::Endstops WGes, Sensor::HallSwitch HWhall, bool infinite){
   bool top = 0;
   bool bottom = 0;
   int n = 0;

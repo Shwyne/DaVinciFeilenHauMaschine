@@ -1,10 +1,4 @@
-/*
-                Library for MP6550 DC-Motor-driver
-*/
-
-#include "DC_Motor_Driver.hpp"
-
-namespace DC_Motor_Driver {
+#include "Drivers.hpp"
 
 MP6550::MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin) {
 
@@ -18,7 +12,7 @@ MP6550::MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin) {
 
   if (SLP != 255) {
     pinMode(SLP, OUTPUT);
-    this->enable();
+    this->wake();
   }
   return;
 }
@@ -26,7 +20,7 @@ MP6550::MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin) {
 void MP6550::run(int speed) {
   // Checks if driver in sleep mode (SLP == LOW) and if SLP is used (SLP != 255)
   if (sleepState() == Status::Standby) {
-    this->enable();
+    this->wake();
   }
   // constraints input speed to -255 to 255, because of 8bit PWM control
   speed_ = constrain(speed, -255, 255);
@@ -49,7 +43,7 @@ void MP6550::brake() {
 void MP6550::brake(int brakeForce) {
   // Checks if driver in sleep mode (SLP == LOW) and if SLP is used (SLP != 255)
   if (sleepState() == Status::Standby) {
-    this->enable();
+    this->wake();
   }
   // constraints input brakeForce to 0 to 255, because of 8bit PWM control
   brakeForce = constrain(brakeForce, 0, 255);
@@ -72,7 +66,6 @@ void MP6550::brake(int brakeForce) {
   delay(50);
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
-  this->disable();
   return;
 }
 
@@ -83,11 +76,10 @@ void MP6550::coast() {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   delay(50);
-  this->disable();
   return;
 }
 
-void MP6550::disable() {
+void MP6550::sleep() {
   if (SLP != 255) {
     if (speed_ != 0)
       brake();
@@ -96,7 +88,7 @@ void MP6550::disable() {
   return;
 }
 
-void MP6550::enable() {
+void MP6550::wake() {
   if (SLP != 255) {
     digitalWrite(SLP, HIGH);
   }
@@ -142,4 +134,3 @@ MP6550::~MP6550() {
   }
   return;
 }
-} // namespace DC_Motor_Driver

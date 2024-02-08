@@ -1,7 +1,7 @@
 #include "AllFunctions.hpp"
 
 namespace exportData{
-void MagnetTimings(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed){
+void MagnetTimings(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed){
   constexpr uint8_t nMagnets = 6;     //Number of magnets on the DC-Motor
   uint32_t aTT_Timer = 0;             //Timer for the averageTriggerTime
   bool hallTriggered = false;         //Flag to check if the Sensor::Hall-sensor is triggered
@@ -44,7 +44,7 @@ void MagnetTimings(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, uint8_t
   mdc.brake();
 }
 
-void WeightCountMagnets(DC_Motor_Driver::MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es, uint8_t speed){
+void WeightCountMagnets(MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es, uint8_t speed){
     if(HW::reversed == true){
       speed = constrain(-speed, -HW::MAXSPEED, 0);
     }
@@ -118,7 +118,7 @@ void ServoPositions(ServoExp servo, uint8_t angle1, uint8_t angle2, uint16_t ite
   }
 }
 
-void SliderTiming(DC_Motor_Driver::MP6550 mdc, Sensor::Endstops es, uint8_t speed, uint8_t iterations){
+void SliderTiming(MP6550 mdc, Sensor::Endstops es, uint8_t speed, uint8_t iterations){
   if(es.read() != Slider::RIGHT){
     mdc.run(-speed);
     while(es.read() != Slider::RIGHT){

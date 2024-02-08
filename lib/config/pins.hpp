@@ -32,10 +32,10 @@ constexpr uint8_t STP_M1 = A10;
 constexpr uint8_t STP_M2 = A9;
 
 //*Sensorik:
-constexpr uint8_t WG_ES_T = 39; // Endstop Weight Top
-constexpr uint8_t WG_ES_B = 41; // Endstop Weight unten
-constexpr uint8_t SL_ES_L = 43; // Endstop Slide left    //*brown
-constexpr uint8_t SL_ES_R = 45; // Endstop Slide right   //*green
+constexpr uint8_t WG_ES_T = 41; // Endstop Weight Top
+constexpr uint8_t WG_ES_B = 39; // Endstop Weight unten
+constexpr uint8_t SL_ES_L = 45; // Endstop Slide left    
+constexpr uint8_t SL_ES_R = 43; // Endstop Slide right   
 
 constexpr uint8_t HR_HALL = 22; // Hall-Sensor Hammerwheel //! 49
 constexpr uint8_t SG_HALL = 23; // Hall-Sensor Sign        //! 51

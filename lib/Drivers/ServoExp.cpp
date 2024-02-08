@@ -1,7 +1,6 @@
-#include "ServoExp.hpp"
+#include "Drivers.hpp"
 
 ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max) {
-
   MIN_ = min;
   MAX_ = max;
   tolerance_ = 0;
@@ -9,38 +8,29 @@ ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max) {
 }
 
 void ServoExp::attach() {
+  Servo::attach(pin_);
+  posTarg_ = read();
+}
 
-  Servo::attach(pin_); // Attach servo to pin
-  posTarg_ = read();   // Set target position to current position
+void ServoExp::write(int value){
+  posTarg_ = constrain(value, MIN_, MAX_);
+  Servo::write(posTarg_);
 }
 
 void ServoExp::run(uint8_t angle) {
-
-  posTarg_ = constrain(
-      angle, MIN_, MAX_); // Check if angle is in range and if not, corrects it
-  Servo::write(posTarg_); // Write target position to servo
+  posTarg_ = constrain(angle, MIN_, MAX_);
+  Servo::write(posTarg_);
 }
 
 void ServoExp::setTolerance(uint8_t tolerance) {
-  // Set tolerance for target position. If tolerance is 0, target position must
-  // be reached exactly. Maximum is half of the angle range.
   tolerance_ = constrain(tolerance, 0, abs(MAX_ - MIN_) / 2);
 }
 
 bool ServoExp::reachedTarget() {
-
-  // Check if target position is reached (with tolerance)
   return (abs(read() - posTarg_) <= tolerance_);
 }
 
-bool ServoExp::isAt(uint8_t angle) {
-
-  // Check if servo is at a specific angle
-  return (abs(read() - angle) <= tolerance_);
-}
-
 void ServoExp::printData() {
-
   Serial.println("Servo-Data:");
   Serial.println("\n----------------------");
   Serial.print(" Control-Pin: ");
@@ -67,4 +57,6 @@ void ServoExp::printData() {
   Serial.println("°");
 }
 
-ServoExp::~ServoExp() { Servo::detach(); }
+ServoExp::~ServoExp() {
+  Servo::detach();
+}
