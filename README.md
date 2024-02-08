@@ -13,11 +13,11 @@ Dependencies
 
 Hardware included:
 ===
-~ MP6550 DC-Motor Driver (2x) + V-Tec 19 RPM Gear DC-Motor (2x)
-~ DRV8825 Stepper Driver + NEMA 17 Stepper-Motor (SM-17HS4023)
-~ Servo MG996R (2x)
-~ Hallswitch Sensor A3144 (2x)
-~ Generic Switches (Used in CNC and such as endstops) (4x)
-~ Arduino Mega 2560 Rev3
-~ RGB Button
-~ Transistors, Resistors, Diodes, ...
+- MP6550 DC-Motor Driver (2x) + V-Tec 19 RPM Gear DC-Motor (2x)
+- DRV8825 Stepper Driver + NEMA 17 Stepper-Motor (SM-17HS4023)
+- Servo MG996R (2x)
+- Hallswitch Sensor A3144 (2x)
+- Generic Switches (Used in CNC and such as endstops) (4x)
+- Arduino Mega 2560 Rev3
+- RGB Button
+- Transistors, Resistors, Diodes, ...
