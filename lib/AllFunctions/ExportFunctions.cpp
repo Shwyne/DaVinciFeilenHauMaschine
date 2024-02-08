@@ -45,7 +45,7 @@ void MagnetTimings(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t s
 }
 
 void WeightCountMagnets(MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es, uint8_t speed){
-    if(HW::reversed == true){
+    if(HW::REVERSED == true){
       speed = constrain(-speed, -HW::MAXSPEED, 0);
     }
     else{

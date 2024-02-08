@@ -5,7 +5,7 @@ MP6550 SLdc(pin::SL_IN1, pin::SL_IN2,pin::SL_SLP); // Motor Slider (In1, In2, Sl
 MP6550 HWdc(pin::HR_IN1, pin::HR_IN2,pin::HR_SLP); // Motor Hammerwheel (In1, In2, Sleep)
 ServoExp HSsv(pin::HS_SRV, HS::MIN, HS::MAX); // Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp COsv(pin::CO_SRV, COUP::MIN, COUP::MAX); // Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
-DRV8825 SGst(STP::SPR, pin::STP_DIR, pin::STP_STP);
+StepExp SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_EN, pin::STP_M0, pin::STP_M1, pin::STP_M2, pin::SG_HALL); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 //A4988 SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_M0, pin::STP_M1,pin::STP_M2); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 Sensor::Endstops WGes(pin::WG_ES_T, pin::WG_ES_B); // Endschalter Weight (BottomPin, TopPin, TriggerState)
 Sensor::Endstops SLes(pin::SL_ES_R, pin::SL_ES_L); // Endschalter Slider (LeftPin, RightPin, TriggerState)
@@ -44,41 +44,17 @@ void setup() {
   COsv.run(COUP::EN);
   HSsv.setTolerance(HS::TOLERANCE);
   COsv.setTolerance(COUP::TOLERANCE);
-
-  // Temp Output:
-  Serial.println("HW: ");
-  Serial.print("RPM: ");
-  Serial.println(HW::RPM);
-  Serial.print("TIMEOUT: ");
-  Serial.println(HW::TIMEOUT);
-  Serial.print("SPEED: ");
-  Serial.println(HW::SPEED);
-  Serial.print("RS_SPEED: ");
-  Serial.println(HW::RS_SPEED);
-  Serial.println("SL: ");
-  Serial.print("RPM: ");
-  Serial.println(SL::RPM);
-  Serial.print("TIMEOUT: ");
-  Serial.println(SL::TIMEOUT);
-  Serial.print("SPEED: ");
-  Serial.println(SL::SPEED);
-  Serial.print("RS_SPEED: ");
-  Serial.println(SL::RS_SPEED);
-
   //initStateOfMachine();
   
   if(DEBUG>0) Serial.println("Setup done.");
 }
 
 void loop() {
-  
   //dloop();
 }
 
 void inline dloop() {
   //*IDLE: Waiting for Go-Signal
- // step::pos1();
-  check();
   Go.updateLED(LED::GREEN);
   if(DEBUG>0) Serial.println("IDLE: Waiting for Go-Signal.");
   while(Go.read() != true){
@@ -88,11 +64,13 @@ void inline dloop() {
   if(DEBUG>0) Serial.println("IDLE: Go-Signal received.");
   sleepDrivers(false);
   Go.updateLED(LED::CYAN);
-  //step::pos2();
-  if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
+  
   //*RUN: Running the machine
+  SGst.run(STP::POS);
+  check();
   HWdc.run(HW::SPEED);
   SLdc.run(SL::SPEED);
+  if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
   //TODO: Implement Estimating distance to endstop for error-checking
   bool reachedBot = false;
   bool reachedLeft = false;
@@ -141,9 +119,10 @@ void inline dloop() {
   SLdc.brake();
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
-  //step::pos3();
-
+  
   //*RESET: Resetting the System
+  SGst.run(STP::POS);
+  check();
   if(DEBUG>0) Serial.println(fullReset ? "RESET: Full Reset" : "RESET: Weight Reset");
   serv::decouple();
   check();
@@ -208,6 +187,8 @@ void inline dloop() {
   serv::hammergo();
   check();
   serv::couple();
+  check();
+  SGst.home();
   check();
   sleepDrivers(true);
   delay(1000);

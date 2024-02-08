@@ -100,63 +100,6 @@ void hammergo() {
 
 } // namespace serv
 
-namespace step {
-
-uint8_t pos = 1;
-
-void pos1() {
-  if(DEBUG>1) Serial.println("STEP: Searching for Pos 1");
-  ctime = millis();
-  while (SGha.read() == false) {
-    SGst.move(1);
-  }
-  if(DEBUG>1) Serial.println("STEP: Pos 1 found.");
-  pos = 1;
-}
-
-void pos2() {
-  if(DEBUG>1) Serial.print("STEP: Pos 2 (");
-  if (pos == 1){
-    if(DEBUG>1){
-    Serial.print("+");
-    Serial.print(STP::POS);
-    Serial.println(" Steps)");
-    }
-    SGst.move(STP::POS);
-  }
-  else if (pos == 3){
-    if(DEBUG>1){
-    Serial.print("-");
-    Serial.print(STP::POS);
-    Serial.println(" Steps)");
-    }
-    SGst.move(-STP::POS);
-  }
-  pos = 2;
-}
-
-void pos3() {
-  if(DEBUG>1) Serial.print("STEP: Pos 3 (");
-  if (pos == 2){
-    if(DEBUG>1){
-    Serial.print("+");
-    Serial.print(STP::POS);
-    Serial.println(" Steps)");
-    }
-    SGst.move(STP::POS);
-  }
-  else if (pos == 1){
-    if(DEBUG>1){
-    Serial.print("-");
-    Serial.print(STP::POS);
-    Serial.println(" Steps)");
-    }
-    SGst.move(-STP::POS);
-  }
-  pos = 3;
-}
-} // namespace step
-
 
 void IdentifyES(){
   Serial.println("Identifying Endstops.");

@@ -21,11 +21,6 @@ void TestDC(MP6550 mdc) {
     delay(10);
   }
   delay(1000);
-  Serial.println("Running motor to full speed then coasting");
-  mdc.run(255);
-  delay(1000);
-  mdc.coast();
-  delay(1000);
   Serial.println("Running motor to full speed then braking");
   mdc.run(255);
   delay(1000);
@@ -123,7 +118,7 @@ void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
 } // namespace testComp
 
 namespace testFunc {
-void TestHammer(MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallSwitch hallHr) {
+void TestHammer() {
   if (HSsv.attached() == false) {
     HSsv.attach();
   }
@@ -134,7 +129,7 @@ void TestHammer(MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallS
   delay(1000);
 
   Serial.println("Starting Motor.");
-  HRdc.run(HW::SPEED);
+  HWdc.run(HW::SPEED);
   delay(1000);
 
   Serial.println("Waiting for weight to reach bottom.");
@@ -143,74 +138,70 @@ void TestHammer(MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallS
   }
 
   Serial.println("Weight reached bottom, motor is braking.");
-  HRdc.brake();
+  HWdc.brake();
   delay(1000);
 
   Serial.println("Engaging Hammerstop.");
   serv::hammerstop();
 
   Serial.println("Rewinding the Weight.");
-  HRdc.run(HW::RS_SPEED);
+  HWdc.run(HW::RS_SPEED);
   while(WGes.read() != Weight::BOTTOM) {
     delay(10);
   }
 
   Serial.println("Weight reached the top, motor is braking.");
-  HRdc.brake();
+  HWdc.brake();
   serv::hammergo();
 }
 
-void TestSchlitten(MP6550 moSl, ServoExp KUsv, Sensor::Endstops esSl) {
-  if (KUsv.attached() == false) {
-    KUsv.attach();
+void TestSchlitten() {
+  if (COsv.attached() == false) {
+    COsv.attach();
   }
   Serial.println("Testing Schlitten");
 
   int speed = 255;
 
-  if (esSl.read() != 0) {
-    if (esSl.read() == 1) {
+  if (SLes.read() != 0) {
+    if (SLes.read() == 1) {
       Serial.println("Schlitten ist links");
       delay(1000);
-      moSl.run(speed);
-    } else if (esSl.read() == 2) {
+      SLdc.run(speed);
+    } else if (SLes.read() == 2) {
       Serial.println("Schlitten ist rechts");
       delay(1000);
-      moSl.run(-speed);
+      SLdc.run(-speed);
     }
   } else {
     Serial.println("Kein Endschalter erreicht");
     delay(1000);
-    moSl.run(speed);
-    while (esSl.read() == 0) {
+    SLdc.run(speed);
+    while (SLes.read() == 0) {
       delay(10);
     }
-    moSl.brake();
+    SLdc.brake();
     delay(1000);
   }
 }
 
-void TestSchild(DRV8825 stp, bool hallInUse) {
+void TestSign() {
   constexpr uint16_t DELAY = 1000;
-
-  Serial.println("Testing Schild\n-----------------");
-
-  if (hallInUse) {
-    Serial.println("Stepper to Home.");
-    step::pos1();
-    delay(DELAY);
-  }
-
-  Serial.println("Stepper to Pos 2.");
-  step::pos2();
+  Serial.println("Testing Schild:");
+  Serial.println("Home");
+  SGst.home();
   delay(DELAY);
-
-  Serial.println("Stepper to Pos 3.");
-  step::pos3();
-  delay(2 * DELAY);
+  Serial.println("Pos2");
+  SGst.run(STP::POS);
+  delay(DELAY);
+  Serial.println("Pos3");
+  SGst.run(STP::POS);
+  delay(DELAY*2);
+  Serial.println("Test: Done.");
+  return;
 }
 
-void TestWeight(MP6550 HWdc, Sensor::Endstops WGes, bool infinite){
+void TestWeight (bool infinite){
   if(WGes.read() == Weight::TOP){
     Serial.println("Weight is TOP");
     HWdc.run(HW::SPEED);

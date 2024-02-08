@@ -9,7 +9,7 @@ extern MP6550 SLdc;
 extern MP6550 HWdc;
 extern ServoExp HSsv;
 extern ServoExp COsv;
-extern DRV8825 SGst;
+extern StepExp SGst;
 //extern A4988 SGst;
 extern Sensor::Endstops WGes;
 extern Sensor::Endstops SLes;
@@ -83,12 +83,6 @@ namespace serv {
     void hammergo();
 }
 
-namespace step {
-    void pos1();
-    void pos2();
-    void pos3();
-}
-
 void check();
 void IdentifyES();
 void sleepDrivers(bool goToSleep);
@@ -110,11 +104,11 @@ void TestStepper(DRV8825 stp, bool hallInUse = false);
 namespace testFunc {
 
 //*Funktionsgruppen
-void TestHammer(MP6550 HRdc, ServoExp HSsv, Sensor::Endstops WGes, Sensor::HallSwitch hallHr);
-void TestSchlitten(MP6550 moSl, ServoExp KUsv, Sensor::Endstops esSl);
-void TestSchild(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse = false);
-void TestWeight(MP6550 HWdc, Sensor::Endstops WGes, bool infinite = true);
-void TestWeightError(MP6550 HWdc, Sensor::Endstops WGes,Sensor::HallSwitch HWhall, bool infinite = true);
+void TestHammer();
+void TestSchlitten();
+void TestSign();
+void TestWeight(bool infinite = true);
+void TestWeightError(bool infinite = true);
 
 } // namespace testFunc
 

@@ -1,59 +1,63 @@
 #include "Drivers.hpp"
 
-ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max) {
-  MIN_ = min;
-  MAX_ = max;
-  tolerance_ = 0;
-  pin_ = pin;
+ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max, uint8_t tolerance) {
+  this->MIN = min;
+  this->MAX = max;
+  this->tolerance = tolerance;
+  this->pin = pin;
 }
 
 void ServoExp::attach() {
-  Servo::attach(pin_);
-  posTarg_ = read();
+  Servo::attach(pin);
+  posTarg = read();
 }
 
-void ServoExp::write(int value){
-  posTarg_ = constrain(value, MIN_, MAX_);
-  Servo::write(posTarg_);
+void ServoExp::write(int angle){
+  posTarg = constrain(angle, MIN, MAX);
+  Servo::write(posTarg);
 }
 
 void ServoExp::run(uint8_t angle) {
-  posTarg_ = constrain(angle, MIN_, MAX_);
-  Servo::write(posTarg_);
+  posTarg = constrain(angle, MIN, MAX);
+  Servo::write(posTarg);
 }
 
 void ServoExp::setTolerance(uint8_t tolerance) {
-  tolerance_ = constrain(tolerance, 0, abs(MAX_ - MIN_) / 2);
+  this->tolerance = constrain(tolerance, 0, abs(MAX - MIN) / 2);
 }
 
 bool ServoExp::reachedTarget() {
-  return (abs(read() - posTarg_) <= tolerance_);
+  if(abs(read() - posTarg) <= tolerance){
+    return true;
+  }
+  else{
+    return false;
+  }
 }
 
 void ServoExp::printData() {
   Serial.println("Servo-Data:");
-  Serial.println("\n----------------------");
-  Serial.print(" Control-Pin: ");
-  Serial.println(pin_);
-  Serial.print(" Current Angle: ");
+  Serial.print("Control-Pin: ");
+  Serial.println(pin);
+  Serial.print("Current Angle: ");
   Serial.print(read());
   Serial.println("°");
-  Serial.print(" Target Angle: ");
-  Serial.print(posTarg_);
+  Serial.print("Target Angle: ");
+  Serial.print(posTarg);
   Serial.println("°");
-  Serial.print(" Tolerance: ");
-  Serial.print(tolerance_);
+  Serial.print("Tolerance: ");
+  Serial.print(tolerance);
   Serial.println("°");
   if (reachedTarget() == true) {
     Serial.println(" Target Position reached.");
   } else {
     Serial.println(" Target Position not reached.");
   }
-  Serial.print(" Minimum Angle: ");
-  Serial.print(MIN_);
+  Serial.print(" Min Angle: ");
+  Serial.print(MIN);
   Serial.println("°");
-  Serial.print(" Maximum Angle: ");
-  Serial.print(MAX_);
+  Serial.print(" Max Angle: ");
+  Serial.print(MAX);
   Serial.println("°");
 }
 
