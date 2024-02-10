@@ -4,10 +4,10 @@
 namespace pin {
 
 //*DC-Motor Hammerwheel:
-constexpr uint8_t HR_IN1 = 12;
-constexpr uint8_t HR_IN2 = 13;
-constexpr uint8_t HR_SLP = 11;
-constexpr uint8_t HR_VIS = A0;
+constexpr uint8_t HW_IN1 = 12;
+constexpr uint8_t HW_IN2 = 13;
+constexpr uint8_t HW_SLP = 11;
+constexpr uint8_t HW_VIS = A0;
 
 //*DC-Motor Schlitten:
 constexpr uint8_t SL_IN1 = 4;
