@@ -1,8 +1,8 @@
 #include "AllFunctions.hpp"    //All Functions includes all (custom) libraries and Arduino.h
 
 //*Components:
-MP6550 SLdc(pin::SL_IN1, pin::SL_IN2,pin::SL_SLP); // Motor Slider (In1, In2, Sleep)
-MP6550 HWdc(pin::HR_IN1, pin::HR_IN2,pin::HR_SLP); // Motor Hammerwheel (In1, In2, Sleep)
+MP6550 SLdc(pin::SL_IN1, pin::SL_IN2,pin::SL_SLP, SL::REVERSED, SL::AUTO_SLEEP); // Motor Slider (In1, In2, Sleep)
+MP6550 HWdc(pin::HW_IN1, pin::HW_IN2,pin::HW_SLP, HW::REVERSED, HW::AUTO_SLEEP); // Motor Hammerwheel (In1, In2, Sleep)
 ServoExp HSsv(pin::HS_SRV, HS::MIN, HS::MAX); // Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp COsv(pin::CO_SRV, COUP::MIN, COUP::MAX); // Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
 StepExp SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_EN, pin::STP_M0, pin::STP_M1, pin::STP_M2, pin::SG_HALL); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
