@@ -16,7 +16,7 @@ Sensor::Button Go(pin::GO_BUT,pin::GO_LED_R,pin::GO_LED_G,pin::GO_LED_B); // Go-
 ErrCode erCode = ErrCode::NO_ERROR;
 uint32_t ctime = 0;
 uint32_t stime = 0; //Slider Timer, counts only, if Slider is moving and resets with full reset
-uint32_t HWtime = 0;
+uint32_t HWtime = 0;  //Timer for Hammerwheel + Hall-Sensor
 
 bool fullReset = true;
 
@@ -40,11 +40,10 @@ void setup() {
   // Servo-Setup:
   HSsv.attach(); // Initializes Servo Hammerstop
   COsv.attach(); // Initializes Servo Kupplung
-  HSsv.run(HS::OFF);
-  COsv.run(COUP::EN);
   HSsv.setTolerance(HS::TOLERANCE);
   COsv.setTolerance(COUP::TOLERANCE);
-  //initStateOfMachine();
+  
+  initStateOfMachine();
   
   if(DEBUG>0) Serial.println("Setup done.");
 }
@@ -66,7 +65,7 @@ void inline dloop() {
   Go.updateLED(LED::CYAN);
   
   //*RUN: Running the machine
-  SGst.run(STP::POS);
+  //SGst.run(STP::POS);
   check();
   HWdc.run(HW::SPEED);
   SLdc.run(SL::SPEED);
@@ -121,7 +120,7 @@ void inline dloop() {
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
   
   //*RESET: Resetting the System
-  SGst.run(STP::POS);
+  //SGst.run(STP::POS);
   check();
   if(DEBUG>0) Serial.println(fullReset ? "RESET: Full Reset" : "RESET: Weight Reset");
   serv::decouple();
@@ -188,7 +187,7 @@ void inline dloop() {
   check();
   serv::couple();
   check();
-  SGst.home();
+  //SGst.home();
   check();
   sleepDrivers(true);
   delay(1000);
@@ -197,41 +196,55 @@ void inline dloop() {
 }
 
 void initStateOfMachine(){
-  if(SLes.read() != Slider::RIGHT && WGes.read() != Weight::TOP){
-    if(DEBUG>1) Serial.println("INIT: Full Reset");
-    HWdc.run(HW::RS_SPEED);
+  bool SliderReset = false;
+  bool WeightReset = false;
+  if(DEBUG>0) Serial.print("INIT: Begin | ");
+  sleepDrivers(false);
+  COsv.write(COUP::DIS);
+  HSsv.write(HS::OFF);
+  if(SLes.read() != Slider::RIGHT){
     SLdc.run(SL::RS_SPEED);
+    SliderReset = true;
+  }
+  if(WGes.read() != Weight::TOP){
+    HWdc.run(HW::RS_SPEED);
+    WeightReset = true;
+  }
+  if(WeightReset && SliderReset){
+    if(DEBUG>0) Serial.print("Full | ");
+    serv::hammerstop();
     bool ReachedTop = false;
     bool ReachedRight = false;
     while((ReachedTop == false) || (ReachedRight == false)){
       if(SLes.read() == Slider::RIGHT && ReachedRight == false){
-        if(DEBUG>1) Serial.println("INIT: Slider RIGHT");
+        if(DEBUG>1) Serial.print("Slider | ");
         ReachedRight = true;
         SLdc.brake();
       }
       if(WGes.read() == Weight::TOP && ReachedTop == false){
-        if(DEBUG>1) Serial.println("INIT: Weight TOP");
+        if(DEBUG>1) Serial.print("Weight | ");
         ReachedTop = true;
         HWdc.brake();
       }
     }
+    serv::hammergo();
   }
-  else if(SLes.read() != Slider::RIGHT){
+  else if(WeightReset){
+    serv::hammerstop();
+    if(DEBUG>1) Serial.println("INIT: Weight");
+    while(WGes.read() != Weight::TOP){
+      delay(1);
+    }
+    HWdc.brake();
+    serv::hammergo();
+  }
+  else if(SliderReset){
     if(DEBUG>1) Serial.println("INIT: Slider");
-    SLdc.run(SL::RS_SPEED);
     while(SLes.read() != Slider::RIGHT){
       delay(1);
     }
     SLdc.brake();
   }
-  else if(WGes.read() != Weight::TOP){
-    if(DEBUG>1) Serial.println("INIT: Weight");
-    HWdc.run(HW::RS_SPEED);
-    while(WGes.read() != Weight::TOP){
-      delay(1);
-    }
-    HWdc.brake();
-  }
-  if(DEBUG>0) Serial.println("INIT: Start Position");
+  if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
 }
