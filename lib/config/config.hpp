@@ -13,7 +13,7 @@ constexpr int DELAY = 1000;
 //----------------------------------------------------
 //Debugging and Error-Management:
 constexpr uint8_t DEBUG = 2;    //0 = off, 1 = basic info, 2 = detailed info
-constexpr bool ERROR_MANAGEMENT = true;   // 0 or true = off, 1 or false = on
+constexpr bool ERROR_MANAGEMENT = false;   // 0 or true = off, 1 or false = on
 
 //----------------------------------------------------
 //Hammerwheel Motor:

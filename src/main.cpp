@@ -24,7 +24,7 @@ void initStateOfMachine();
 
 void inline dloop();
 
-void setup() {
+void setup() { 
   
   //Serial-Setup:
   if(DEBUG>0) {
@@ -66,7 +66,7 @@ void inline dloop() {
   Go.updateLED(LED::CYAN);
   
   //*RUN: Running the machine
-  SGst.run(STP::POS);
+  //SGst.run(STP::POS);
   check();
   HWdc.run(HW::SPEED);
   SLdc.run(SL::SPEED);
@@ -121,7 +121,7 @@ void inline dloop() {
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
   
   //*RESET: Resetting the System
-  SGst.run(STP::POS);
+  //SGst.run(STP::POS);
   check();
   if(DEBUG>0) Serial.println(fullReset ? "RESET: Full Reset" : "RESET: Weight Reset");
   serv::decouple();
@@ -188,7 +188,7 @@ void inline dloop() {
   check();
   serv::couple();
   check();
-  SGst.home();
+  //SGst.home();
   check();
   sleepDrivers(true);
   delay(1000);
