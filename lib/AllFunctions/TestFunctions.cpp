@@ -4,292 +4,279 @@
 
 namespace testComp { //*Testfunctions for components
 
-void TestDC(MP6550 mdc) {
-  Serial.println("\nTEST: DC-Motor");
-  Serial.println("----------------------");
-  mdc.printData();
-  delay(1000);
-  Serial.println("Running motor from 0 to 255");
-  for (int i = 0; i <= 255; i++) {
-    mdc.run(i);
-    delay(10);
+void TestMP6550(MP6550 DC, uint8_t ButtonPin){
+  bool ButtonPresent = false;
+  if(ButtonPin != 255){
+    Serial.println("Press and hold the button to run the motor.");
+    Serial.println(" Releasing and pressing again will change the direction.");
+    ButtonPresent = true;
+    pinMode(ButtonPin, INPUT_PULLUP);
   }
-  delay(1000);
-  Serial.println("Running motor from 255 to 0");
-  for (int i = 255; i >= 0; i--) {
-    mdc.run(i);
-    delay(10);
+  bool reverse = false;
+  if(ButtonPresent){
+    while(true){
+      if(digitalRead(ButtonPin) == LOW){
+        if(reverse){
+          Serial.println("Forward");
+          DC.run(255);
+          reverse = false;
+        }
+        else{
+          Serial.println("Reverse");
+          DC.run(-255);
+          reverse = true;
+        }
+        while(digitalRead(ButtonPin) == LOW){
+          delay(1);
+        }
+        DC.brake();
+      }
+    }
   }
-  delay(1000);
-  Serial.println("Running motor to full speed then braking");
-  mdc.run(255);
-  delay(1000);
-  mdc.brake();
-  delay(1000);
-  Serial.println("Disabling motor");
-  mdc.sleep();
-  delay(1000);
-  Serial.println("TEST: Done.");
-  Serial.println("----------------------\n");
+  else{
+    Serial.println("Running Motor forward.");
+    DC.run(255);
+    delay(5000);
+    Serial.println("Braking Motor.");
+    DC.brake();
+    delay(1000);
+    Serial.println("Running Motor reverse.");
+    DC.run(-255);
+    delay(5000);
+    Serial.println("Braking Motor.");
+    DC.brake();
+  }
   return;
 }
 
-void TestServo(ServoExp srv, uint8_t pos1, uint8_t pos2) {
-  if (srv.attached() == false) {
-    srv.attach();
+void TestServo(ServoExp srv, uint8_t ButtonPin, uint8_t pos1, uint8_t pos2){
+  bool ButtonPresent = false;
+  if(ButtonPin != 255){
+    Serial.println("Press the button to move the servo to next position.");
+    ButtonPresent = true;
+    pinMode(ButtonPin, INPUT_PULLUP);
   }
-  Serial.println("Test: Servo");
-  Serial.println("----------------------");
-  srv.printData();
-  delay(1000);
-  Serial.println("Servo to pos1");
-  srv.write(pos1);
-  delay(5000);
-  Serial.println("Servo to pos2");
-  srv.write(pos2);
-  delay(5000);
-  Serial.println("Test: Done.");
-  Serial.println("----------------------\n");
+  bool reverse = false;
+  if(ButtonPresent){
+    while(true){
+      if(digitalRead(ButtonPin) == LOW){
+        if(reverse){
+          Serial.println("Position 1");
+          srv.write(pos1);
+          reverse = false;
+        }
+        else{
+          Serial.println("Position 2");
+          srv.write(pos2);
+          reverse = true;
+        }
+        while(digitalRead(ButtonPin) == LOW){
+          delay(1);
+        }
+      }
+    }
+  }
+  else{
+    Serial.println("Moving to Position 1.");
+    srv.write(pos1);
+    delay(500);
+    Serial.println("Moving to Position 2.");
+    srv.write(pos2);
+    delay(500);
+    Serial.println("Moving to Position 1.");
+    srv.write(pos1);
+    delay(500);
+    Serial.println("Moving to Position 2.");
+    srv.write(pos2);
+    delay(500);
+  }
   return;
 }
 
-void TestServo(ServoExp srv, uint8_t Butpin, uint8_t pos1, uint8_t pos2) {
-  if (srv.attached() == false) {
-    srv.attach();
+void TestStepper(StepExp stp, uint8_t ButtonPin){
+  bool ButtonPresent = false;
+  if(ButtonPin != 255){
+    Serial.println("Press the button to move the stepper 200 Steps.");
+    Serial.println("The Direction will change after each press.");
+    ButtonPresent = true;
+    pinMode(ButtonPin, INPUT_PULLUP);
   }
-  Serial.println("Test: Servo");
-  Serial.println("----------------------");
-  srv.printData();
-  delay(1000);
-  Serial.println("Servo to pos1. Press Button to continue.");
-  unsigned long ctime = millis();
-  while (true) {
-    if (millis() - ctime >= 1000) {
-      ctime = millis();
-      Serial.print(".");
-    }
-    if (digitalRead(Butpin) == LOW) {
-      srv.write(pos1);
-      delay(500);
-      break;
-    }
-  }
-  Serial.println("Servo to pos2. Press Button to continue.");
-  ctime = millis();
-  while (true) {
-    if (millis() - ctime >= 1000) {
-      ctime = millis();
-      Serial.print(".");
-    }
-    if (digitalRead(Butpin) == LOW) {
-      srv.write(pos2);
-      delay(500);
-      break;
+  bool reverse = false;
+  if(ButtonPresent){
+    while(true){
+      if(digitalRead(ButtonPin) == LOW){
+        if(reverse){
+          Serial.println("REV: 200 Steps");
+          stp.run(-200);
+          reverse = false;
+        }
+        else{
+          Serial.println("FWD: 200 Steps");
+          stp.run(200);
+          reverse = true;
+        }
+        while(digitalRead(ButtonPin) == LOW){
+          delay(1);
+        }
+      }
     }
   }
-  Serial.println("Test: Done.");
-  Serial.println("----------------------\n");
+  else{
+    Serial.println("Moving 200 Steps forward.");
+    stp.run(200);
+    delay(500);
+    Serial.println("Moving 200 Steps reverse.");
+    stp.run(-200);
+    delay(500);
+    Serial.println("Moving 200 Steps forward.");
+    stp.run(200);
+    delay(500);
+    Serial.println("Moving 200 Steps reverse.");
+    stp.run(-200);
+  }
   return;
 }
 
-void TestStepper(DRV8825 stp, Sensor::HallSwitch hall, bool hallInUse) {
-  Serial.println("Test: Stepper");
-  Serial.println("----------------------");
-  delay(1000);
-  if (hallInUse) {
-    Serial.println("Stepper to Home.");
-    while (hall.read() != true) {
-      stp.move(1);
+void TestEndstops(Sensor::Endstops es, Sensor::Button button, bool UseLED){
+
+  Serial.println("Testing Endstops:");
+  while(true){
+    if(es.read() == 0){
+      Serial.println("Endstop is not triggered.");
+      if(UseLED){
+        button.updateLED(LED::RED);
+      }
     }
-  } else {
-    Serial.println("No Sensor::Hall Sensor in use. Pos1 = current position.");
+    else if(es.read() == 1){
+      Serial.println("Endstop 1 is triggered.");
+      if(UseLED){
+        button.updateLED(LED::GREEN);
+      }
+    }
+    else if(es.read() == 2){
+      Serial.println("Endstop 2 is triggered.");
+      if(UseLED){
+        button.updateLED(LED::BLUE);
+      }
+    }
+    else if(es.read() == 3){
+      Serial.println("Both Endstops are triggered.");
+      if(UseLED){
+        button.updateLED(LED::YELLOW);
+      }
+    }
   }
-  delay(1000);
-  Serial.println("Stepper to Pos 2.");
-  stp.move(STP::POS);
-  delay(1000);
-  Serial.println("Stepper to Pos 3.");
-  stp.move(STP::POS);
-  delay(1000);
-  Serial.println("Test: Done.");
-  Serial.println("----------------------\n");
+  return;
+}
+
+void TestHall(Sensor::HallSwitch hall, Sensor::Button button, bool UseLED){
+  Serial.println("Testing Hall-Sensor:");
+  while(true){
+    if(hall.read() == false){
+      Serial.println("Hall-Sensor is not triggered.");
+      if(UseLED){
+        button.updateLED(LED::RED);
+      }
+    }
+    else if(hall.read() == true){
+      Serial.println("Hall-Sensor is triggered.");
+      if(UseLED){
+        button.updateLED(LED::GREEN);
+      }
+    }
+  }
+  return;
+}
+
+void TestButton(Sensor::Button button, bool UseLED){
+  Serial.println("Testing Button:");
+  randomSeed(analogRead(A5));
+  while(true){
+    if(button.read() == false){
+      Serial.println("Button is not pressed.");
+      if(UseLED){
+        button.updateLED(LED::OFF);
+      }
+    }
+    else if(button.read() == true){
+      Serial.println("Button is pressed.");
+      if(UseLED){
+        button.updateLED(random(1,8));
+      }
+    }
+  }
   return;
 }
 } // namespace testComp
 
 namespace testFunc {
-void TestHammer() {
-  if (HSsv.attached() == false) {
-    HSsv.attach();
+
+void WeightAndHammer(){
+
+  if(WGes.read() != Weight::TOP){
+    serv::hammerstop();
+    HWdc.run(HW::RS_SPEED);
+    while(WGes.read() != Weight::TOP){
+      delay(1);
+    }
+    HWdc.brake();
+    serv::hammergo();
+    delay(1000);
   }
-  Serial.println("Testing Hammerfunction");
-
-  Serial.println("Disengaging Hammerstop");
-  HSsv.write(HS::OFF);
-  delay(1000);
-
-  Serial.println("Starting Motor.");
   HWdc.run(HW::SPEED);
-  delay(1000);
-
-  Serial.println("Waiting for weight to reach bottom.");
-  while(WGes.read() != Weight::BOTTOM) {
-    delay(10);
+  while(WGes.read() != Weight::BOTTOM){
+    delay(1);
   }
-
-  Serial.println("Weight reached bottom, motor is braking.");
   HWdc.brake();
   delay(1000);
-
-  Serial.println("Engaging Hammerstop.");
   serv::hammerstop();
-
-  Serial.println("Rewinding the Weight.");
   HWdc.run(HW::RS_SPEED);
-  while(WGes.read() != Weight::BOTTOM) {
-    delay(10);
+  while(WGes.read() != Weight::TOP){
+    delay(1);
   }
-
-  Serial.println("Weight reached the top, motor is braking.");
   HWdc.brake();
   serv::hammergo();
+  return;
+
 }
 
-void TestSchlitten() {
-  if (COsv.attached() == false) {
-    COsv.attach();
-  }
-  Serial.println("Testing Schlitten");
-
-  int speed = 255;
-
-  if (SLes.read() != 0) {
-    if (SLes.read() == 1) {
-      Serial.println("Schlitten ist links");
-      delay(1000);
-      SLdc.run(speed);
-    } else if (SLes.read() == 2) {
-      Serial.println("Schlitten ist rechts");
-      delay(1000);
-      SLdc.run(-speed);
-    }
-  } else {
-    Serial.println("Kein Endschalter erreicht");
-    delay(1000);
-    SLdc.run(speed);
-    while (SLes.read() == 0) {
-      delay(10);
+void Slider(){
+  if(SLes.read() != Slider::RIGHT){
+    SLdc.run(SL::RS_SPEED);
+    while(SLes.read() != Slider::RIGHT){
+      delay(1);
     }
     SLdc.brake();
     delay(1000);
   }
-}
-
-void TestSign() {
-  constexpr uint16_t DELAY = 1000;
-  Serial.println("Testing Schild:");
-  Serial.println("Home");
-  SGst.home();
-  delay(DELAY);
-  Serial.println("Pos2");
-  SGst.run(STP::POS);
-  delay(DELAY);
-  Serial.println("Pos3");
-  SGst.run(STP::POS);
-  delay(DELAY*2);
-  Serial.println("Test: Done.");
+  SLdc.run(SL::SPEED);
+  while(SLes.read() != Slider::LEFT){
+    delay(1);
+  }
+  SLdc.brake();
+  delay(1000);
+  SLdc.run(SL::RS_SPEED);
+  while(SLes.read() != Slider::RIGHT){
+    delay(1);
+  }
+  SLdc.brake();
   return;
 }
 
-void TestWeight (bool infinite){
-  if(WGes.read() == Weight::TOP){
-    Serial.println("Weight is TOP");
-    HWdc.run(HW::SPEED);
-  }
-  else{
-    Serial.println("Weight is NOT top");
-    HWdc.run(HW::RS_SPEED);
-  }
-  while(infinite == true){
-    if(WGes.read() == Weight::TOP){
-      Serial.println("Top triggered!");
-      HWdc.run(HW::SPEED);
-      delay(500);
-    }
-    else if(WGes.read() == Weight::BOTTOM){
-      Serial.println("Bottom triggered!");
-      HWdc.run(HW::RS_SPEED);
-      delay(500);
-    }
-  } 
-}
-
-//TODO: Error Checking not consistent
-void TestWeightError(MP6550 HWdc, Sensor::Endstops WGes,Sensor::HallSwitch HWhall, bool infinite){
-  erCode = ErrCode::NO_ERROR;
-  bool top = 0;
-  bool bottom = 0;
-  bool firstrun = 1;
-  int n = 0;
-  bool Hall_Triggered = false;
-  constexpr uint8_t min_magnets = 14;
-  constexpr uint8_t max_magnets = 16;
-
-  if(WGes.read() == Weight::TOP){
-    Serial.println("Weight is TOP");
-    HWdc.run(HW::SPEED);
-  }
-  else{
-    Serial.println("Weight is NOT top");
-    HWdc.run(HW::RS_SPEED);
-  }
-  while(infinite == true){
-    if(erCode != ErrCode::NO_ERROR){
-      Serial.print("Error: ");
-      printError(erCode);
-      HWdc.brake();
-      delay(1000);
-      erCode = ErrCode::NO_ERROR;
-    }
-    else if(HWhall.read() && (Hall_Triggered == false)){
-      //Serial.println("I've found a Magnet! :)");
-      Hall_Triggered = true;
-      n++;
-    }
-    else if(n > max_magnets){
-        erCode = ErrCode::WG_TIMEOUT;
-    }
-    else if (!HWhall.read() && Hall_Triggered == true) Hall_Triggered = false;
-    if(WGes.read() == Weight::TOP && top == 0){
-      if(n< min_magnets && firstrun == 0){
-        erCode = ErrCode::HW_TIMEOUT;
-      }
-      HWdc.brake();
-      delay(500);
-      top = 1;
-      bottom = 0;
-      Serial.println("Top triggered!");
-      Serial.print("n: ");
-      Serial.println(n);
-      HWdc.run(HW::SPEED);
-      n = 0;
-    }
-    else if(WGes.read() == Weight::BOTTOM && bottom == 0){
-      if(n< min_magnets){
-        erCode = ErrCode::HW_TIMEOUT;
-      }
-      firstrun = 0;
-      HWdc.brake();
-      delay(500);
-      top = 0;
-      bottom = 1;
-      Serial.println("Bottom triggered!");
-      Serial.print("n: ");
-      Serial.println(n);
-      HWdc.run(HW::RS_SPEED);
-      n = 0;
-    }
-  }
+void Sign(uint16_t delayTime){
+  SGst.home();
+  delay(delayTime);
+  SGst.run(STP::POS);
+  delay(delayTime);
+  SGst.run(STP::POS);
+  delay(2*delayTime);
+  SGst.home();
+  delay(delayTime);
+  SGst.run(-STP::POS);
+  delay(delayTime);
+  SGst.run(-STP::POS);
+  delay(2*delayTime);
+  return;
 }
 
 } // namespace testFunc

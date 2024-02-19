@@ -91,24 +91,24 @@ void printError(ErrCode erCode);
 
 //--------------------TestFunctions.cpp--------------------
 
+//*Testing the Components
 namespace testComp {
 
-//*Einzeltests
-void TestDC(MP6550 mdc);
-void TestServo(ServoExp srv, uint8_t pos1 = 0, uint8_t pos2 = 180);
-void TestServo(ServoExp srv, uint8_t Butpin, uint8_t pos1 = 0, uint8_t pos2 = 180);
-void TestStepper(DRV8825 stp, bool hallInUse = false);
+void TestMP6550(MP6550 DC, uint8_t ButtonPin = 255);
+void TestServo(ServoExp srv, uint8_t ButtonPin = 255, uint8_t pos1 = 0, uint8_t pos2 = 180);
+void TestStepper(StepExp stp, uint8_t ButtonPin = 255);
+void TestEndstops(Sensor::Endstops es, Sensor::Button button, bool UseLED = false);
+void TestHall(Sensor::HallSwitch hall, Sensor::Button button, bool UseLED = false);
+void TestButton(Sensor::Button button, bool UseLED = true);
 
 } // namespace testComp
 
 namespace testFunc {
 
 //*Funktionsgruppen
-void TestHammer();
-void TestSchlitten();
-void TestSign();
-void TestWeight(bool infinite = true);
-void TestWeightError(bool infinite = true);
+void WeightAndHammer();
+void Slider();
+void Sign(uint16_t delayTime = 1000);
 
 } // namespace testFunc
 
