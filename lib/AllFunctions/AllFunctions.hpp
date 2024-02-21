@@ -51,8 +51,8 @@ namespace Weight {
 namespace Slider {
     enum State {
         UNTRIGGERED = 0,
-        LEFT = 1,
-        RIGHT = 2,
+        RIGHT = 1,
+        LEFT = 2,
     };
 }
 

@@ -77,7 +77,9 @@ void MP6550::brake() {
   digitalWrite(IN1pin, HIGH);
   digitalWrite(IN2pin, HIGH);
   speed = 0;
-  delay(100);
+  delay(500);
+  digitalWrite(IN1pin, LOW);
+  digitalWrite(IN2pin, LOW);
   if(autoSleep) {
     this->sleep();
   }

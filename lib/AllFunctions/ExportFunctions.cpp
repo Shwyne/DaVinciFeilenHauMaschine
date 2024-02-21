@@ -53,7 +53,7 @@ void WeightCountMagnets(MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es
     }
     if(es.read() != Weight::TOP){
       //serv::hammerstop();
-      mdc.run(HW::RS_SPEED);
+      mdc.run(-HW::RS_SPEED);
       while(es.read() != Weight::TOP){
         delay(1);
       }
@@ -88,7 +88,7 @@ void WeightCountMagnets(MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es
       mdc.brake();
       delay(500);
       //serv::hammerstop();
-      mdc.run(HW::RS_SPEED);
+      mdc.run(-HW::RS_SPEED);
       while(es.read() != Weight::TOP){
         delay(1);
       }

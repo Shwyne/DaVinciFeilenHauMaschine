@@ -39,56 +39,53 @@ bool Button::changed() {
 
 void Button::updateLED(uint8_t mode){
     switch(mode){
-        case 0: //off
-            red = 0;
-            green = 0;
-            blue = 0;
+        case 0: //OFF
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
             break;
-        case 1: //red
-            red = 255;
-            green = 0;
-            blue = 0;
+        case 1: //RED
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
             break;
-        case 2: //green
-            red = 0;
-            green = 255;
-            blue = 0;
+        case 2: //GREEN
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, LOW);
             break;
-        case 3: //blue
-            red = 0;
-            green = 0;
-            blue = 255;
+        case 3: //BLUE
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, HIGH);
             break;
-        case 4: //yellow
-            red = 255;
-            green = 255;
-            blue = 0;
+        case 4: //YELLOW
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, LOW);
             break;
-        case 5: //cyan
-            red = 0;
-            green = 255;
-            blue = 255;
+        case 5: //CYAN
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, HIGH);
             break;
-        case 6: //magenta
-            red = 255;
-            green = 0;
-            blue = 255;
+        case 6: //MAGENTA
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, HIGH);
             break;
-        case 7: //white
-            red = 255;
-            green = 255;
-            blue = 255;
+        case 7: //WHITE
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, HIGH);
             break;
-        default:
-            red = 0;
-            green = 0;
-            blue = 0;
+        default:    //DEFAULT: OFF
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
             break;
-    digitalWrite(Rpin, red==255);
-    digitalWrite(Gpin, green==255);
-    digitalWrite(Bpin, blue==255);
+    }
     return;
-  }
 }
 
 void Button::updateLED(uint8_t red, uint8_t green, uint8_t blue){

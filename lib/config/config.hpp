@@ -49,6 +49,7 @@ constexpr float i = 0.5;
 //----------------------------------------------------
 //Stepper Motor:
 namespace STP{
+constexpr bool ENABLED = 0;
 constexpr uint8_t MICRO_STEPS = 16;     //1,2,4,8,16,32
 constexpr uint8_t SPR = 200;            //Steps per Revolution
 constexpr float i = 0.1;                //Gear Ratio

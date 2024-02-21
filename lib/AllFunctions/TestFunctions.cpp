@@ -215,7 +215,7 @@ void WeightAndHammer(){
 
   if(WGes.read() != Weight::TOP){
     serv::hammerstop();
-    HWdc.run(HW::RS_SPEED);
+    HWdc.run(-HW::RS_SPEED);
     while(WGes.read() != Weight::TOP){
       delay(1);
     }
@@ -230,7 +230,7 @@ void WeightAndHammer(){
   HWdc.brake();
   delay(1000);
   serv::hammerstop();
-  HWdc.run(HW::RS_SPEED);
+  HWdc.run(-HW::RS_SPEED);
   while(WGes.read() != Weight::TOP){
     delay(1);
   }
@@ -242,7 +242,7 @@ void WeightAndHammer(){
 
 void Slider(){
   if(SLes.read() != Slider::RIGHT){
-    SLdc.run(SL::RS_SPEED);
+    SLdc.run(-SL::RS_SPEED);
     while(SLes.read() != Slider::RIGHT){
       delay(1);
     }
@@ -255,7 +255,7 @@ void Slider(){
   }
   SLdc.brake();
   delay(1000);
-  SLdc.run(SL::RS_SPEED);
+  SLdc.run(-SL::RS_SPEED);
   while(SLes.read() != Slider::RIGHT){
     delay(1);
   }
@@ -376,7 +376,7 @@ void MagnetsHR(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed
   }
   else{
     Serial.println("Weight is NOT top");
-    HWdc.run(HW::RS_SPEED);
+    HWdc.run(-HW::RS_SPEED);
   }
   while(infinite == true){
     if(HWhall.read() && (Hall_Triggered == false)){
@@ -404,7 +404,7 @@ void MagnetsHR(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed
       Serial.println("Bottom triggered!");
       Serial.print("n: ");
       Serial.println(n);
-      HWdc.run(HW::RS_SPEED);
+      HWdc.run(-HW::RS_SPEED);
       n = 0;
     }
   }
