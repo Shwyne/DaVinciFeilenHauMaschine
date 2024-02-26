@@ -13,14 +13,14 @@ constexpr int DELAY = 1000;
 //----------------------------------------------------
 //Debugging and Error-Management:
 constexpr uint8_t DEBUG = 2;    //0 = off, 1 = basic info, 2 = detailed info
-constexpr bool ERROR_MANAGEMENT = false;   // 0 or true = off, 1 or false = on
+constexpr bool ERROR_MANAGEMENT = true;   // 0 or true = off, 1 or false = on
 
 //----------------------------------------------------
 //Hammerwheel Motor:
 namespace HW {
 constexpr float RPM_255 = 19;
 constexpr uint8_t MAXSPEED = 255;
-constexpr bool REVERSED = 0;
+constexpr bool REVERSED = 1;
 constexpr bool AUTO_SLEEP = 1;
 constexpr int SPEED = 180;
 constexpr int RS_SPEED = 255;

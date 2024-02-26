@@ -37,6 +37,16 @@ bool Button::changed() {
     return false;
 }
 
+void Button::waitForPress() {
+    while(this->read() != true){
+        delay(1);
+    }
+    while(this->read() != false){
+        delay(1);
+    }
+    return;
+}
+
 void Button::updateLED(uint8_t mode){
     switch(mode){
         case 0: //OFF

@@ -28,6 +28,8 @@ void inline running();
 void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst);
 void inline resetting();
 
+bool forward = true;
+
 void setup() { 
   
   //Serial-Setup:
@@ -54,6 +56,7 @@ void setup() {
   initStateOfMachine();
   
   if(DEBUG>0) Serial.println("Setup done.");
+
 }
 
 void loop() {
@@ -113,7 +116,7 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
   bool ReachedSliderTarget = false;
   while((ReachedWeightTarget == false) || (ReachedSliderTarget == false)){
     if(WGes.read() == WeightState && ReachedWeightTarget == false){
-      if(DEBUG>1) Serial.println("RUN: Weight reached");
+      if(DEBUG>1) Serial.print("Weight reached Target");
       ReachedWeightTarget = true;
       HWdc.brake();
       if(brakeAtFirst){
@@ -123,7 +126,7 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
       }
     }
     if(SLes.read() == SliderState && ReachedSliderTarget == false){
-      if(DEBUG>1) Serial.println("RUN: Slider reached");
+      if(DEBUG>1) Serial.print("Slider reached Target");
       ReachedSliderTarget = true;
       SLdc.brake();
       if(brakeAtFirst){
@@ -175,12 +178,7 @@ void inline resetting(){
 
 void initStateOfMachine(){
   if(DEBUG>0) Serial.println("Press Go-Button to initialize the machine.");
-  while(Go.read() != true){
-    delay(1);
-  }
-  while(Go.read() != false){
-    delay(1);
-  }
+  Go.waitForPress();
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
   sleepDrivers(false);
@@ -190,6 +188,42 @@ void initStateOfMachine(){
     serv::hammerstop();
     check();
   }
+  switch(SLes.read()){
+    case 0:
+      Serial.print("Slider -> Untriggered");
+      break;
+    case 1:
+      Serial.print("Slider -> Right");
+      break;
+    case 2:
+      Serial.print("Slider -> Left");
+      break;
+    case 3:
+      Serial.print("Slider -> Both");
+      break;
+    default:
+      Serial.print("Slider -> Error");
+      break;
+ }
+ if(WGes.read()){
+    switch(WGes.read()){
+      case 0:
+        Serial.print("Weight -> Untriggered");
+        break;
+      case 1:
+        Serial.print("Weight -> Top");
+        break;
+      case 2:
+        Serial.print("Weight -> Bottom");
+        break;
+      case 3:
+        Serial.print("Weight -> Both");
+        break;
+      default:
+        Serial.print("Weight -> Error");
+        break;
+    }
+ }
   if(SLes.read() != Slider::RIGHT && WGes.read() != Weight::TOP){
     if(DEBUG>1) Serial.print("INIT: Full | ");
     SLdc.run(-SL::RS_SPEED);
@@ -197,23 +231,23 @@ void initStateOfMachine(){
     WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
   }
   else if(SLes.read() != Slider::RIGHT){
-    if(DEBUG>1) Serial.print("INIT: Slider | ");
+    if(DEBUG>1) Serial.print("Slider -> RIGHT | ");
     SLdc.run(-SL::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, true);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
     SLdc.brake();
   }
   else if(WGes.read() != Weight::TOP){
-    if(DEBUG>1) Serial.print("INIT: Weight | ");
+    if(DEBUG>1) Serial.print("Weight -> TOP | ");
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, true);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
     HWdc.brake();
   }
-  if(COsv.read() != HS::OFF){
-    serv::hammergo();
-    check();
-  }
+  
+  serv::hammergo();
+  check();
   serv::couple();
   check();
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
 }
+ 

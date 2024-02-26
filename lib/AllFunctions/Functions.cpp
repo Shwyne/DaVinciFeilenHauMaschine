@@ -42,15 +42,9 @@ void hammerstop() {
     HSsv.attach();
   }
   using namespace HS;
+  
   HWdc.run(HW::SPEED);
   ctime = millis();
-  while(HWha.read() != true){
-    delay(1);
-    if(millis() - ctime > HW::TIMEOUT){
-      erCode = ErrCode::HW_TIMEOUT;
-      if(ERROR_MANAGEMENT) return;
-    }
-  }
   while(HWha.read() == true){
     delay(1);
     if(millis() - ctime > HW::TIMEOUT){
@@ -58,7 +52,14 @@ void hammerstop() {
       if(ERROR_MANAGEMENT) return;
     }
   }
-  delay(100); //
+  while(HWha.read() != true){
+    delay(1);
+    if(millis() - ctime > HW::TIMEOUT){
+      erCode = ErrCode::HW_TIMEOUT;
+      if(ERROR_MANAGEMENT) return;
+    }
+  }
+  delay(450); //
   HWdc.brake();
   delay(500);
   HSsv.run(ON);

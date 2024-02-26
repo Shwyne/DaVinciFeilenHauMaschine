@@ -42,6 +42,7 @@ public:
   Button(uint8_t Butpin, uint8_t Rpin, uint8_t Gpin, uint8_t Bpin);
   bool read();
   bool changed();
+  void waitForPress();
   void updateLED(uint8_t mode);
   void updateLED(uint8_t red, uint8_t green, uint8_t blue);
   void printData();
