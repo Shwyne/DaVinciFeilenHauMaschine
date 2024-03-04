@@ -118,26 +118,6 @@ Status MP6550::sleepState() {
   return Status::Active;
 }
 
-void MP6550::printData() {
-  Serial.println("\nMP6550:");
-  Serial.print(" IN1: ");
-  Serial.println(IN1pin);
-  Serial.print(" IN2: ");
-  Serial.println(IN2pin);
-  if (SLPpin != 255) {
-    Serial.print(" SLP: ");
-    Serial.println(SLPpin);
-  }
-  Serial.print(" Speed: ");
-  Serial.println(speed);
-  if (sleepState() == Status::Standby) {
-    Serial.println(" Status: Standby");
-  } else {
-    Serial.println(" Status: Active");
-  }
-  return;
-}
-
 MP6550::~MP6550() {
   this->brake();
   return;

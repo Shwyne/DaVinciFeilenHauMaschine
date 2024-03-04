@@ -31,7 +31,8 @@ void inline resetting();
 bool forward = true;
 
 void setup() { 
-  
+  //TODO if eeprom error = true -> go back into error state.
+  //TODO The eeprom has to be cleared by a maintainer. and shouldnt be easy to be cleared by the user.
   //Serial-Setup:
   Go.updateLED(LED::WHITE);
   if(DEBUG>0) {
@@ -49,9 +50,11 @@ void setup() {
   COsv.attach(); // Initializes Servo Kupplung
   HSsv.setTolerance(HS::TOLERANCE);
   COsv.setTolerance(COUP::TOLERANCE);
+  HSsv.setPositions(HS::OFF, HS::ON);
+  COsv.setPositions(COUP::DIS, COUP::EN);
 
-  COsv.write(COUP::DIS);
-  HSsv.write(HS::OFF);
+  COsv.runToPos(SERVO::OFF);
+  HSsv.runToPos(SERVO::OFF);
 
   initStateOfMachine();
   
@@ -89,7 +92,6 @@ void inline idling(){
     SGst.home();
     check();
   }
-  sleepDrivers(true);
   Go.updateLED(LED::GREEN);
   while(Go.read() != true){
     delay(1);
@@ -100,7 +102,6 @@ void inline idling(){
 
 void inline running(){
   Go.updateLED(LED::CYAN);
-  sleepDrivers(false);
   if(STP::ENABLED == true){
     SGst.run(STP::POS);
     check();
@@ -181,7 +182,6 @@ void initStateOfMachine(){
   Go.waitForPress();
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
-  sleepDrivers(false);
   if(SLes.read() != Slider::RIGHT || WGes.read() != Weight::TOP){
     serv::decouple();
     check();

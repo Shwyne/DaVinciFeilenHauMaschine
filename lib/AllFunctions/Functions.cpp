@@ -6,8 +6,7 @@ namespace serv {
 
 void decouple() {
   if(DEBUG>1) Serial.println("DECOUPLE: Starts");
-  using namespace COUP;
-  COsv.run(DIS);
+  COsv.run(COUP::DIS);
   ctime = millis();
   while(COsv.reachedTarget() == false){
     if(millis() - ctime > COUP::TIMEOUT){
@@ -22,8 +21,7 @@ void decouple() {
 
 void couple() {
   if(DEBUG>1) Serial.println("COUPLE: Starts");
-  using namespace COUP;
-  COsv.run(EN);
+  COsv.run(COUP::EN);
   ctime = millis();
   while(COsv.reachedTarget() == false){
     if(millis() - ctime > COUP::TIMEOUT){
@@ -41,8 +39,14 @@ void hammerstop() {
   if(HSsv.attached() == false){
     HSsv.attach();
   }
-  using namespace HS;
-  
+  if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
+    HSsv.run(HS::OFF);
+    delay(100);
+    if(HSsv.reachedTarget() == false){
+      erCode = ErrCode::HS_NOT_IN_POS;
+      if(ERROR_MANAGEMENT) return;
+    }
+  }
   HWdc.run(HW::SPEED);
   ctime = millis();
   while(HWha.read() == true){
@@ -59,10 +63,10 @@ void hammerstop() {
       if(ERROR_MANAGEMENT) return;
     }
   }
-  delay(450); //
+  delay(450); //TODO: Calculate value based on RPM of Hammerwheel motor
   HWdc.brake();
   delay(500);
-  HSsv.run(ON);
+  HSsv.run(HS::ON);
   ctime = millis();
   while(HSsv.reachedTarget() == false){
     delay(1);
@@ -141,26 +145,13 @@ void IdentifyES(){
   }
 }
 
-void sleepDrivers(bool goToSleep){
-  if(goToSleep == true){
-    HWdc.sleep();
-    SLdc.sleep();
-    SGst.disable();
-  }
-  else{
-    HWdc.wake();
-    SLdc.wake();
-    SGst.enable();
-  }
-}
-
 void check(){
   if(ERROR_MANAGEMENT == false){
     return;
   }
   if(erCode != ErrCode::NO_ERROR){
+    //TODO: Add write to EEPROM
     printError(erCode);
-    sleepDrivers(true);
     while(1){
       Go.updateLED(LED::RED);
       delay(500);

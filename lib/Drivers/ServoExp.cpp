@@ -5,25 +5,47 @@ ServoExp::ServoExp(uint8_t pin, uint8_t min, uint8_t max, uint8_t tolerance) {
   this->MAX = max;
   this->tolerance = tolerance;
   this->pin = pin;
+  this->pos1 = 0;
+  this->pos2 = 180;
+  return;
 }
 
 void ServoExp::attach() {
   Servo::attach(pin);
-  posTarg = read();
+  this->posTarg = read();
+  return;
 }
 
-void ServoExp::write(int angle){
-  posTarg = constrain(angle, MIN, MAX);
-  Servo::write(posTarg);
-}
-
-void ServoExp::run(uint8_t angle) {
-  posTarg = constrain(angle, MIN, MAX);
-  Servo::write(posTarg);
+void ServoExp::setPositions(uint8_t pos1, uint8_t pos2) {
+  this->pos1 = constrain(pos1, this->MIN, this->MAX);
+  this->pos2 = constrain(pos2, this->MIN, this->MAX);
+  return;
 }
 
 void ServoExp::setTolerance(uint8_t tolerance) {
-  this->tolerance = constrain(tolerance, 0, abs(MAX - MIN) / 2);
+  this->tolerance = constrain(tolerance, 0, abs(this->MAX - this->MIN) / 2);
+  return;
+}
+
+void ServoExp::write(uint8_t angle){
+  this->posTarg = constrain(angle, this->MIN, this->MAX);
+  Servo::write(posTarg);
+  return;
+}
+
+void ServoExp::run(uint8_t angle) {
+  this->write(angle);
+  return;
+}
+
+void ServoExp::runToPos(uint8_t pos) {
+  if(pos == 0 && pos1 != 255){
+    this->write(pos1);
+  }
+  else if(pos == 1 && pos2 != 255){
+    this->write(pos2);
+  }
+  return;
 }
 
 bool ServoExp::reachedTarget() {
@@ -35,32 +57,7 @@ bool ServoExp::reachedTarget() {
   }
 }
 
-void ServoExp::printData() {
-  Serial.println("Servo-Data:");
-  Serial.print("Control-Pin: ");
-  Serial.println(pin);
-  Serial.print("Current Angle: ");
-  Serial.print(read());
-  Serial.println("°");
-  Serial.print("Target Angle: ");
-  Serial.print(posTarg);
-  Serial.println("°");
-  Serial.print("Tolerance: ");
-  Serial.print(tolerance);
-  Serial.println("°");
-  if (reachedTarget() == true) {
-    Serial.println(" Target Position reached.");
-  } else {
-    Serial.println(" Target Position not reached.");
-  }
-  Serial.print(" Min Angle: ");
-  Serial.print(MIN);
-  Serial.println("°");
-  Serial.print(" Max Angle: ");
-  Serial.print(MAX);
-  Serial.println("°");
-}
-
 ServoExp::~ServoExp() {
   Servo::detach();
+  return;
 }

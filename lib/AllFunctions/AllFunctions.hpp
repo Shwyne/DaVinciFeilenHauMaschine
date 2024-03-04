@@ -57,6 +57,15 @@ namespace Slider {
 }
 
 
+//Positions of the Servo (OFF = pos1, ON = pos2):
+namespace SERVO {
+    enum State {
+        OFF = 0,
+        ON = 1,
+    };
+}
+
+
 
 //============================================================
 //*Hardware-Settings:
@@ -85,7 +94,6 @@ namespace serv {
 
 void check();
 void IdentifyES();
-void sleepDrivers(bool goToSleep);
 
 void printError(ErrCode erCode);
 
