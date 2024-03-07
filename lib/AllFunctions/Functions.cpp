@@ -35,27 +35,38 @@ void couple() {
 }
 
 void hammerstop() {
+  //Debug Message
   if(DEBUG>1) Serial.println("HAMMERSTOP: Starts");
+  //If Servo not attached -> attach
   if(HSsv.attached() == false){
     HSsv.attach();
   }
+  //Check if Servo is not in Off Position
   if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
+    //If Servo not in Off (+ Tolerance) try to run to Off
     HSsv.run(HS::OFF);
-    delay(100);
+    delay(400);
+    //Check if that worked
     if(HSsv.reachedTarget() == false){
+      //If not, error code -> Error Management
       erCode = ErrCode::HS_NOT_IN_POS;
       if(ERROR_MANAGEMENT) return;
     }
   }
+  //Start Motor to find engage position
   HWdc.run(HW::SPEED);
+  //Set timer for Timeout Error Management
   ctime = millis();
+  //Wait till Hall-Sensor detects Magnet
   while(HWha.read() == true){
     delay(1);
     if(millis() - ctime > HW::TIMEOUT){
+      //TimeOut Error-Handling -> millis() - ctime = deltaT
       erCode = ErrCode::HW_TIMEOUT;
       if(ERROR_MANAGEMENT) return;
     }
   }
+  //Wait till magnet isnt detected anymore
   while(HWha.read() != true){
     delay(1);
     if(millis() - ctime > HW::TIMEOUT){
@@ -63,19 +74,26 @@ void hammerstop() {
       if(ERROR_MANAGEMENT) return;
     }
   }
+  //Delay to match position perfectly
   delay(450); //TODO: Calculate value based on RPM of Hammerwheel motor
   HWdc.brake();
-  delay(500);
+  delay(100);
+  //Motor in postion -> engage hammerstop
   HSsv.run(HS::ON);
+  //Reset timer for Timeout Error Management
   ctime = millis();
+  //Wait for Servo to reach Target (+ Tolerance)
   while(HSsv.reachedTarget() == false){
     delay(1);
     if(millis() - ctime > HS::TIMEOUT){
+      //If delta T > Timeout -> Error
       erCode = ErrCode::HS_NOT_IN_POS;
       if(ERROR_MANAGEMENT) return;
     }
   }
   if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
+  //delay to make sure the next action starts properly
+  delay(300);
   return;
 }
 
