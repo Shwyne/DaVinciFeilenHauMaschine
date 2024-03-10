@@ -44,6 +44,8 @@ void setup() {
     showErrorLED();
   }
 
+  pinMode(pin::FAN, OUTPUT); //Initializes the fan (if available)
+
   Go.updateLED(LED::WHITE);
 
   //* Sign-Stepper Setup:
@@ -118,6 +120,7 @@ void inline idling(){
 //*RUN: Running the machine
 
 void inline running(){
+  digitalWrite(pin::FAN, HIGH); //Turns on the fan (if available)
   Go.updateLED(LED::CYAN);
   if(STP::ENABLED == true){
     SGst.moveTo(STP::POS);
@@ -226,7 +229,7 @@ void inline resetting(){
   serv::couple();
   check();
   delay(1000);
-
+  digitalWrite(pin::FAN, LOW); //Turns off the fan (if available)
 }
 
 //*Init: Initialize the System
