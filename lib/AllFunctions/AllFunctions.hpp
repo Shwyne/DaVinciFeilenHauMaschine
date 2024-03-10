@@ -21,19 +21,19 @@ extern Sensor::Button Go;
 //Error-Handling:
 
 enum class ErrCode : uint8_t {
-    NO_ERROR,
-    HW_TIMEOUT,
-    SG_TIMEOUT,
-    WG_TIMEOUT,
-    SL_TIMEOUT,
-    STPDRV_NOT_CONNECTED,
-    WG_OVERCURRENT,
-    SL_OVERCURRENT,
-    COUP_NOT_ATTACHED,
-    COUP_NOT_IN_POS,
-    HS_NOT_ATTACHED,
-    HS_NOT_IN_POS,
-    UNDEFINED
+    NO_ERROR = 0,
+    HW_TIMEOUT = 1,
+    SG_TIMEOUT = 2,
+    WG_TIMEOUT = 3,
+    SL_TIMEOUT = 4,
+    STPDRV_NOT_CONNECTED = 5,
+    WG_OVERCURRENT = 6,
+    SL_OVERCURRENT = 7,
+    COUP_NOT_ATTACHED = 8,
+    COUP_NOT_IN_POS = 9,
+    HS_NOT_ATTACHED = 10,
+    HS_NOT_IN_POS = 11,
+    UNDEFINED = 255,
 };
 
 extern ErrCode erCode;
@@ -105,9 +105,9 @@ void showErrorLED();
 
 void IdentifyES();
 
-void printError(ErrCode erCode);
+void printError();
 
-void writeToEEPROM(ErrCode erCode);
+void writeToEEPROM();
 bool hasErrorEEPROM();
 void clearEEPROM();
 

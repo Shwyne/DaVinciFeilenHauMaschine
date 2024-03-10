@@ -21,7 +21,7 @@ constexpr uint16_t ERROR_LED_DELAY = 500; //ms
 //----------------------------------------------------
 //Hammerwheel Motor:
 namespace HW {
-constexpr float RPM_255 = 19;
+constexpr float RPM_255 = 10;
 constexpr uint8_t MAXSPEED = 255;
 constexpr bool REVERSED = 1;
 constexpr bool AUTO_SLEEP = 1;
@@ -101,7 +101,8 @@ constexpr bool TRIGGERED_IF = 0; //0 = LOW, 1 = HIGH
 
 namespace HW{
 constexpr float RPM = (SPEED / 255.0) * RPM_255 * i;        //RPM
-constexpr uint16_t TIMEOUT = (RPM>0 && i>0 && nMAGNETS>0) ? 60000/(RPM*nMAGNETS) * 2: 0;
+constexpr uint32_t TIMEOUT = (RPM>0 && i>0 && nMAGNETS>0) ? 60000/(RPM*nMAGNETS) * 2: 0;
+constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 }
 
 namespace SL{
@@ -109,6 +110,7 @@ constexpr int SPEED = (SYNCHRONIZED) ? HW::RPM/(RPM_255*i) * 255 * SYNC_FAC : sp
 constexpr float RPM = (SYNCHRONIZED) ? HW::RPM : (SPEED / 255.0) * RPM_255 * i;
 constexpr float time_min = (RPM>0 && PITCH>0) ? L_mm/(RPM*PITCH) : 0;
 constexpr uint32_t TIMEOUT = time_min * 60000 * 1.2;
+constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 }
 
 namespace STP{

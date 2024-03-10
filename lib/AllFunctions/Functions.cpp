@@ -237,8 +237,10 @@ void check(){
     return;
   }
   if(erCode != ErrCode::NO_ERROR){
-    writeToEEPROM(erCode);
-    printError(erCode);
+    HWdc.brake();
+    SLdc.brake();
+    writeToEEPROM();
+    printError();
     showErrorLED();
   }
   return;
@@ -270,7 +272,7 @@ void showErrorLED(){
   }
 }
 
-void printError(ErrCode erCode) {
+void printError() {
   switch (erCode) {
   case ErrCode::NO_ERROR: 
     Serial.println("No Error."); 
@@ -313,7 +315,7 @@ void printError(ErrCode erCode) {
   }
 }
 
-void writeToEEPROM(ErrCode erCode){
+void writeToEEPROM(){
   if(EEPROM_ENABLED == false){
     return;
   }
@@ -321,6 +323,7 @@ void writeToEEPROM(ErrCode erCode){
     EEPROM.write(EEPROM_ADDRESS, true);
     EEPROM.write(EEPROM_ADDRESS+1, static_cast<uint8_t>(erCode));
   }
+  return;
 }
 
 bool hasErrorEEPROM(){
@@ -348,4 +351,5 @@ void clearEEPROM(){
     EEPROM.write(EEPROM_ADDRESS, false);
     EEPROM.write(EEPROM_ADDRESS+1, 0);
   }
+  return;
 }

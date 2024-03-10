@@ -1,5 +1,4 @@
 #include "AllFunctions.hpp"    //All Functions includes all (custom) libraries and Arduino.h
-#include "EEPROM.h"
 
 //*Components:
 MP6550 SLdc(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP, SL::REVERSED, SL::AUTO_SLEEP); // Motor Slider (In1, In2, Sleep)
@@ -16,7 +15,8 @@ Sensor::Button Go(pin::GO_BUT,pin::GO_LED_R,pin::GO_LED_G,pin::GO_LED_B); // Go-
 ErrCode erCode = ErrCode::NO_ERROR;
 uint32_t ctime = 0;
 uint32_t stime = 0; //Slider Timer, counts only, if Slider is moving and resets with full reset
-uint32_t HWtime = 0;  //Timer for Hammerwheel + Hall-Sensor
+uint32_t hwtime = 0; //Hammerwheel Timer, counts only, if Hammerwheel is moving
+uint32_t wtime = 0; //Weight Timer for resetting manners
 
 bool fullReset = true;
 
@@ -25,7 +25,7 @@ void initStateOfMachine();
 void inline dloop();
 void inline idling();
 void inline running();
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst);
+void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst, bool reset = false);
 void inline resetting();
 
 void setup() { 
@@ -40,7 +40,7 @@ void setup() {
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
   if(hasErrorEEPROM() && ERROR_MANAGEMENT){
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
-    printError(erCode);
+    printError();
     showErrorLED();
   }
 
@@ -130,9 +130,12 @@ void inline running(){
 
 //*WAIT: Waiting for Endstops and then returns (brakeAtFirst = true: Brake at first reached endstop, brakeAtFirst = false: Brake when both endstops are reached)
 
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst){
+void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst, bool reset){
   bool ReachedWeightTarget = false;
   bool ReachedSliderTarget = false;
+  bool detectedMagnet = false;
+  ctime = millis();
+  hwtime = millis();
   while((ReachedWeightTarget == false) || (ReachedSliderTarget == false)){
     if(WGes.read() == WeightState && ReachedWeightTarget == false){
       if(DEBUG>1) Serial.print("Weight reached Target");
@@ -140,6 +143,8 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
       HWdc.brake();
       if(brakeAtFirst){
         fullReset = false;
+        wtime = millis() - ctime;
+        stime += wtime;
         SLdc.brake();
         return;
       }
@@ -154,6 +159,34 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
         return;
       }
     }
+    if(reset){
+      if(wtime != 0 && (millis() - ctime) > wtime){
+        erCode = ErrCode::WG_TIMEOUT;
+        check();
+      }
+      if(stime != 0 && (millis() - ctime) > stime){
+        erCode = ErrCode::SL_TIMEOUT;
+        check();
+      }
+    }
+    else{
+      if(HWha.read() == HIGH && detectedMagnet == false){
+      detectedMagnet = true;
+       hwtime = millis();
+      }
+      else if(HWha.read() == LOW && detectedMagnet == true){
+        detectedMagnet = false;
+      }
+      if((millis() - hwtime) > HW::TIMEOUT){
+        erCode = ErrCode::HW_TIMEOUT;
+        check();
+      }
+      if((millis() - wtime + stime) > SL::TIMEOUT && ReachedSliderTarget == false){
+        erCode = ErrCode::SL_TIMEOUT;
+        check();
+      }
+    }
+    
   }
   return;
 }
@@ -180,11 +213,12 @@ void inline resetting(){
   if(fullReset == true){
     SLdc.run(-SL::RS_SPEED);
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
+    stime = 0;
   }
   else {
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, true);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, true, true);
   }
   if(DEBUG>0) Serial.println("RESET: Endstops reached.");
   serv::hammergo();
@@ -250,18 +284,18 @@ void initStateOfMachine(){
     if(DEBUG>1) Serial.print("INIT: Full | ");
     SLdc.run(-SL::RS_SPEED);
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
   }
   else if(SLes.read() != Slider::RIGHT){
     if(DEBUG>1) Serial.print("Slider -> RIGHT | ");
     SLdc.run(-SL::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
     SLdc.brake();
   }
   else if(WGes.read() != Weight::TOP){
     if(DEBUG>1) Serial.print("Weight -> TOP | ");
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false);
+    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
     HWdc.brake();
   }
   
