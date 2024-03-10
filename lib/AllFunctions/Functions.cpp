@@ -165,7 +165,49 @@ void IdentifyES(){
 
 namespace step{
 
+void setMicroSteps(uint8_t microSteps){
+  switch(microSteps){
+    case 1:
+      digitalWrite(pin::STP_M0, LOW);
+      digitalWrite(pin::STP_M1, LOW);
+      digitalWrite(pin::STP_M2, LOW);
+      break;
+    case 2:
+      digitalWrite(pin::STP_M0, HIGH);
+      digitalWrite(pin::STP_M1, LOW);
+      digitalWrite(pin::STP_M2, LOW);
+      break;
+    case 4:
+      digitalWrite(pin::STP_M0, LOW);
+      digitalWrite(pin::STP_M1, HIGH);
+      digitalWrite(pin::STP_M2, LOW);
+      break;
+    case 8:
+      digitalWrite(pin::STP_M0, HIGH);
+      digitalWrite(pin::STP_M1, HIGH);
+      digitalWrite(pin::STP_M2, LOW);
+      break;
+    case 16:
+      digitalWrite(pin::STP_M0, LOW);
+      digitalWrite(pin::STP_M1, LOW);
+      digitalWrite(pin::STP_M2, HIGH);
+      break;
+    case 32:
+      digitalWrite(pin::STP_M0, HIGH);
+      digitalWrite(pin::STP_M1, HIGH);
+      digitalWrite(pin::STP_M2, HIGH);
+      break;
+    default:
+      digitalWrite(pin::STP_M0, LOW);
+      digitalWrite(pin::STP_M1, LOW);
+      digitalWrite(pin::STP_M2, LOW);
+      break;
+    }
+  return;
+}
+
 void home(){
+  digitalWrite(pin::STP_SLP, HIGH);
   Serial.println("Homing");
   int homing = -1;
   while(SGha.read() == LOW){
@@ -176,32 +218,56 @@ void home(){
   }
   Serial.println("Homed");
   SGst.setCurrentPosition(0);
+  digitalWrite(pin::STP_SLP, LOW);
   return;
 }
 
 void move(int steps){
+  digitalWrite(pin::STP_SLP, HIGH);
   SGst.moveTo(steps);
   SGst.runToPosition();
+  digitalWrite(pin::STP_SLP, LOW);
   return;
 }
 
-}
+} // namespace step
 
 void check(){
   if(ERROR_MANAGEMENT == false){
     return;
   }
   if(erCode != ErrCode::NO_ERROR){
-    //TODO: Add write to EEPROM
+    writeToEEPROM(erCode);
     printError(erCode);
-    while(1){
-      Go.updateLED(LED::RED);
-      delay(500);
-      Go.updateLED(LED::OFF);
-      delay(500);
-    }
+    showErrorLED();
   }
   return;
+}
+
+void showErrorLED(){
+  ctime = millis();
+  LED::color lastColor = LED::OFF;
+  while(1){
+    if(millis() - ctime > ERROR_LED_DELAY){
+      if(lastColor == LED::OFF){
+        Go.updateLED(LED::RED);
+        lastColor = LED::RED;
+      }
+      else{
+        Go.updateLED(LED::OFF);
+        lastColor = LED::OFF;
+      }
+      ctime = millis();
+    }
+    if(digitalRead(pin::CLEAR_ERROR) == LOW){
+      Go.updateLED(LED::MAGENTA);
+      clearEEPROM();
+      erCode = ErrCode::NO_ERROR;
+      delay(2000);
+      Go.updateLED(LED::OFF);
+      return;
+    }
+  }
 }
 
 void printError(ErrCode erCode) {
@@ -244,5 +310,42 @@ void printError(ErrCode erCode) {
     break;
   case ErrCode::UNDEFINED: Serial.println("UNDEFINED ERROR."); 
     break;
+  }
+}
+
+void writeToEEPROM(ErrCode erCode){
+  if(EEPROM_ENABLED == false){
+    return;
+  }
+  else{
+    EEPROM.write(EEPROM_ADDRESS, true);
+    EEPROM.write(EEPROM_ADDRESS+1, static_cast<uint8_t>(erCode));
+  }
+}
+
+bool hasErrorEEPROM(){
+  if(EEPROM_ENABLED == false){
+    return false;
+  }
+  else{
+    bool hasError = EEPROM.read(EEPROM_ADDRESS);
+    uint8_t ErrorCode = EEPROM.read(EEPROM_ADDRESS+1);
+    if(hasError == true){
+      erCode = static_cast<ErrCode>(ErrorCode);
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+}
+
+void clearEEPROM(){
+  if(EEPROM_ENABLED == false){
+    return;
+  }
+  else{
+    EEPROM.write(EEPROM_ADDRESS, false);
+    EEPROM.write(EEPROM_ADDRESS+1, 0);
   }
 }

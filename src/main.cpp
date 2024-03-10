@@ -1,4 +1,5 @@
 #include "AllFunctions.hpp"    //All Functions includes all (custom) libraries and Arduino.h
+#include "EEPROM.h"
 
 //*Components:
 MP6550 SLdc(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP, SL::REVERSED, SL::AUTO_SLEEP); // Motor Slider (In1, In2, Sleep)
@@ -24,42 +25,46 @@ void initStateOfMachine();
 void inline dloop();
 void inline idling();
 void inline running();
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst = true);
+void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst);
 void inline resetting();
 
 void setup() { 
-  //TODO if eeprom error = true -> go back into error state.
-  //TODO The eeprom has to be cleared by a maintainer. and shouldnt be easy to be cleared by the user.
-  //Serial-Setup:
-  Go.updateLED(LED::WHITE);
+
+  //*Serial-Setup:
   if(DEBUG>0) {
   Serial.begin(SERIALSET::BAUTRATE); // Starts Serial Connection between Arduino and PC via USB -> Baudrate = Bits per second (Bps)
   Serial.println("Setup started.");
   }
 
-  // Sign-Stepper Setup:
-  SGst.setMaxSpeed(5000.0); // Increased from 5000.0 to 50000.0
-  SGst.setAcceleration(1000.0);
-  digitalWrite(pin::STP_SLP, HIGH);
-  digitalWrite(pin::STP_RST, HIGH);
-  digitalWrite(pin::STP_M0, HIGH);
-  digitalWrite(pin::STP_M1, HIGH);
-  digitalWrite(pin::STP_M2, HIGH);
+  //*EEPROM Error-Checking:
+  pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
+  if(hasErrorEEPROM() && ERROR_MANAGEMENT){
+    if(DEBUG>0) Serial.println("EEPROM-Error detected.");
+    printError(erCode);
+    showErrorLED();
+  }
 
-  // Servo-Setup:
+  Go.updateLED(LED::WHITE);
+
+  //* Sign-Stepper Setup:
+  SGst.setMaxSpeed(5000.0);
+  SGst.setAcceleration(1000.0);
+  digitalWrite(pin::STP_RST, HIGH);
+  step::setMicroSteps(STP::MICRO_STEPS);
+
+  //* Servo-Setup:
   HSsv.attach(); // Initializes Servo Hammerstop
   COsv.attach(); // Initializes Servo Kupplung
-  HSsv.setTolerance(HS::TOLERANCE);
-  COsv.setTolerance(COUP::TOLERANCE);
-  HSsv.setPositions(HS::OFF, HS::ON);
-  COsv.setPositions(COUP::DIS, COUP::EN);
+  HSsv.setTolerance(HS::TOLERANCE);     // Sets the tolerance for the servo
+  COsv.setTolerance(COUP::TOLERANCE);   // Sets the tolerance for the servo
+  HSsv.setPositions(HS::OFF, HS::ON);   // Sets the positions for the servo (OFF = pos1, ON = pos2)
+  COsv.setPositions(COUP::DIS, COUP::EN);   // Sets the positions for the servo (OFF = DIS = pos1, ON = EN = pos2)
+  COsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
+  HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
-  COsv.runToPos(SERVO::OFF);
-  HSsv.runToPos(SERVO::OFF);
-
-  initStateOfMachine();
+  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
-  if(DEBUG>0) Serial.println("Setup done.");
+  if(DEBUG>0) Serial.println("Setup done.");    
 
 }
 
@@ -75,7 +80,9 @@ void inline dloop() {
 
   running();
   if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
+
   WaitingForEndstops(Weight::BOTTOM, Slider::LEFT, true);
+
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
   
   resetting();
@@ -96,7 +103,7 @@ void inline idling(){
       SGst.moveTo(homing);
       homing--;
       SGst.run();
-      delayMicroseconds(500);
+      //delayMicroseconds(500);   //TODO: Check if this is okay to comment out.
     }
     Serial.println("Homed");
     SGst.setCurrentPosition(0);
@@ -156,6 +163,7 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
 void inline resetting(){
 
   Go.updateLED(LED::YELLOW);
+
   if(STP::ENABLED == true){
     SGst.moveTo(2*STP::POS);
     SGst.runToPosition();
@@ -190,8 +198,10 @@ void inline resetting(){
 //*Init: Initialize the System
 
 void initStateOfMachine(){
-  if(DEBUG>0) Serial.println("Press Go-Button to initialize the machine.");
-  Go.waitForPress();
+  if(DEBUG>0){
+    Serial.println("Press Go-Button to initialize the machine.");
+    Go.waitForPress();
+  }
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
   if(SLes.read() != Slider::RIGHT || WGes.read() != Weight::TOP){

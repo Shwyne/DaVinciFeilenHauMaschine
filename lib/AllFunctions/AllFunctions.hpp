@@ -5,6 +5,7 @@
 #include "config.hpp"
 #include "Sensors.hpp"
 #include "Drivers.hpp"
+#include "EEPROM.h"
 
 extern MP6550 SLdc;
 extern MP6550 HWdc;
@@ -43,7 +44,6 @@ extern uint32_t ctime;
 namespace Weight {
 
 enum State {
-    UNDEFINED = -1,
     UNTRIGGERED = 0,
     TOP = 1,
     BOTTOM = 2,
@@ -53,7 +53,6 @@ enum State {
 namespace Slider {
 
 enum State {
-    UNDEFINED = -1,
     UNTRIGGERED = 0,
     RIGHT = 1,
     LEFT = 2,
@@ -96,14 +95,21 @@ namespace serv {
 }
 
 namespace step {
+    void setMicroSteps(uint8_t microSteps);
     void home();
     void move(int steps);
 }
 
 void check();
+void showErrorLED();
+
 void IdentifyES();
 
 void printError(ErrCode erCode);
+
+void writeToEEPROM(ErrCode erCode);
+bool hasErrorEEPROM();
+void clearEEPROM();
 
 //--------------------TestFunctions.cpp--------------------
 
@@ -112,7 +118,7 @@ namespace testComp {
 
 void TestMP6550(MP6550 DC, uint8_t ButtonPin = 255);
 void TestServo(ServoExp srv, uint8_t ButtonPin = 255, uint8_t pos1 = 0, uint8_t pos2 = 180);
-void TestStepper(StepExp stp, uint8_t ButtonPin = 255);
+void TestStepper(AccelStepper stp, uint8_t ButtonPin = 255);
 void TestEndstops(Sensor::Endstops es, Sensor::Button button, bool UseLED = false);
 void TestHall(Sensor::HallSwitch hall, Sensor::Button button, bool UseLED = false);
 void TestButton(Sensor::Button button, bool UseLED = true);

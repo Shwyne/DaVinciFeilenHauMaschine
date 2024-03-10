@@ -135,6 +135,13 @@
       "left": 219.95,
       "rotate": 270,
       "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn8",
+      "top": 131,
+      "left": -201.6,
+      "attrs": { "color": "black" }
     }
   ],
   "connections": [
@@ -185,7 +192,9 @@
     [ "btn4:2.l", "mega:45", "gold", [ "h-48", "v-38.2" ] ],
     [ "btn6:2.l", "mega:43", "gold", [ "h-28.8", "v85.5" ] ],
     [ "btn7:2.l", "mega:41", "red", [ "h0", "v38.6", "h403.2", "v115.2" ] ],
-    [ "btn5:2.r", "mega:39", "red", [ "h67.4", "v134.6" ] ]
+    [ "btn5:2.r", "mega:39", "red", [ "h67.4", "v134.6" ] ],
+    [ "btn8:2.r", "mega:GND.2", "black", [ "h0" ] ],
+    [ "btn8:1.r", "mega:31", "#8f4814", [ "v0", "h201.8", "v-48" ] ]
   ],
   "dependencies": {}
 }

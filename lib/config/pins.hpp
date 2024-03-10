@@ -45,4 +45,6 @@ constexpr uint8_t GO_LED_R = 49; // LED "Go"
 constexpr uint8_t GO_LED_G = 51; // LED "Go"   
 constexpr uint8_t GO_LED_B =53; // LED "Go"   
 
+constexpr uint8_t CLEAR_ERROR = 31; // Taster "Clear Error"
+
 } // namespace pin

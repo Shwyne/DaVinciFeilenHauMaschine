@@ -93,8 +93,8 @@ void TestServo(ServoExp srv, uint8_t ButtonPin, uint8_t pos1, uint8_t pos2){
   return;
 }
 
-void TestStepper(StepExp stp, uint8_t ButtonPin){
-  bool ButtonPresent = false;
+void TestStepper(AccelStepper stp, uint8_t ButtonPin){
+  /*bool ButtonPresent = false;
   if(ButtonPin != 255){
     Serial.println("Press the button to move the stepper 200 Steps.");
     Serial.println("The Direction will change after each press.");
@@ -133,7 +133,7 @@ void TestStepper(StepExp stp, uint8_t ButtonPin){
     delay(500);
     Serial.println("Moving 200 Steps reverse.");
     stp.run(-200);
-  }
+  }*/
   return;
 }
 
