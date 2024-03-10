@@ -11,7 +11,6 @@ extern MP6550 HWdc;
 extern ServoExp HSsv;
 extern ServoExp COsv;
 extern AccelStepper SGst;
-//extern A4988 SGst;
 extern Sensor::Endstops WGes;
 extern Sensor::Endstops SLes;
 extern Sensor::HallSwitch HWha;
@@ -42,20 +41,23 @@ extern uint32_t ctime;
 //--------------------Enumerator-----------------------
 //Endstops Weight:
 namespace Weight {
-    enum State {
-        UNTRIGGERED = 0,
-        TOP = 1,
-        BOTTOM = 2,
+
+enum State {
+    UNDEFINED = -1,
+    UNTRIGGERED = 0,
+    TOP = 1,
+    BOTTOM = 2,
 };}
 
 //Endstops Slider:
 namespace Slider {
-    enum State {
-        UNTRIGGERED = 0,
-        RIGHT = 1,
-        LEFT = 2,
-    };
-}
+
+enum State {
+    UNDEFINED = -1,
+    UNTRIGGERED = 0,
+    RIGHT = 1,
+    LEFT = 2,
+};}
 
 
 //Positions of the Servo (OFF = pos1, ON = pos2):

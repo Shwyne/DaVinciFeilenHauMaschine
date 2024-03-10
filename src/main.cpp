@@ -6,7 +6,6 @@ MP6550 HWdc(pin::HW_IN1, pin::HW_IN2, pin::HW_SLP, HW::REVERSED, HW::AUTO_SLEEP)
 ServoExp HSsv(pin::HS_SRV, HS::MIN, HS::MAX); // Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp COsv(pin::CO_SRV, COUP::MIN, COUP::MAX); // Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
 AccelStepper SGst(AccelStepper::DRIVER, pin::STP_STP, pin::STP_DIR); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
-//A4988 SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_M0, pin::STP_M1,pin::STP_M2); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 Sensor::Endstops WGes(pin::WG_ES_T, pin::WG_ES_B); // Endschalter Weight (BottomPin, TopPin, TriggerState)
 Sensor::Endstops SLes(pin::SL_ES_R, pin::SL_ES_L); // Endschalter Slider (LeftPin, RightPin, TriggerState)
 Sensor::HallSwitch HWha(pin::HR_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Hammerwheel (Hallpin, TriggerState)
@@ -25,10 +24,8 @@ void initStateOfMachine();
 void inline dloop();
 void inline idling();
 void inline running();
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst);
+void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst = true);
 void inline resetting();
-
-bool forward = true;
 
 void setup() { 
   //TODO if eeprom error = true -> go back into error state.

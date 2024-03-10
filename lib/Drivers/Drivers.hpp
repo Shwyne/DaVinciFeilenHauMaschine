@@ -66,33 +66,3 @@ public:
   
   ~ServoExp();
 };
-
-//*----------------------- Step Expansion -----------------------*//
-
-#include <DRV8825.h>
-#include <A4988.h>
-#include "Sensors.hpp"
-
-class StepExp : public DRV8825 {
-
-private:
-  Sensor::HallSwitch hallSwitch;
-  uint16_t position;
-  bool Standby;
-
-public:
-  StepExp(uint8_t steps, uint8_t dir_pin, uint8_t step_pin, uint8_t enable_pin, uint8_t mode0_pin, uint8_t mode1_pin, uint8_t mode2_pin, uint8_t hall_pin);
-  
-  void begin(float rpm = 60, uint8_t microsteps = 1);
-  
-  void run(int steps);
-  void home();
-
-  void sleep();
-  void wake();
-
-  uint8_t getPosition();
-  Status sleepState();
-
-  ~StepExp() = default;
-};
