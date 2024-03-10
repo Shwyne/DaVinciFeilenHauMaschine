@@ -13,7 +13,7 @@ constexpr int DELAY = 1000;
 //----------------------------------------------------
 //Debugging and Error-Management:
 constexpr uint8_t DEBUG = 2;    //0 = off, 1 = basic info, 2 = detailed info
-constexpr bool ERROR_MANAGEMENT = true;   // 0 or true = off, 1 or false = on
+constexpr bool ERROR_MANAGEMENT = false;   // 0 or true = off, 1 or false = on
 
 //----------------------------------------------------
 //Hammerwheel Motor:
@@ -49,10 +49,10 @@ constexpr float i = 0.5;
 //----------------------------------------------------
 //Stepper Motor:
 namespace STP{
-constexpr bool ENABLED = 0;
-constexpr uint8_t MICRO_STEPS = 16;     //1,2,4,8,16,32
+constexpr bool ENABLED = 1;
+constexpr uint8_t MICRO_STEPS = 32;     //1,2,4,8,16,32
 constexpr uint8_t SPR = 200;            //Steps per Revolution
-constexpr float i = 0.1;                //Gear Ratio
+constexpr float i = 1.2;                //Gear Ratio
 constexpr uint8_t RPM = 10;             //Speed
 constexpr uint16_t ANGLE = 120;         //Angle of Sign
 }
@@ -109,7 +109,7 @@ constexpr uint32_t TIMEOUT = time_min * 60000 * 1.2;
 }
 
 namespace STP{
-constexpr uint16_t POS = (STP::SPR * STP::MICRO_STEPS * (STP::ANGLE/360.0)) / STP::i;
+constexpr uint16_t POS = (STP::SPR * STP::MICRO_STEPS * (STP::ANGLE/360.0)) * STP::i;
 }
 
 namespace HS{

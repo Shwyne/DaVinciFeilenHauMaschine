@@ -264,17 +264,17 @@ void Slider(){
 }
 
 void Sign(uint16_t delayTime){
-  SGst.home();
+ step::home();
   delay(delayTime);
-  SGst.run(STP::POS);
+ step::move(STP::POS);
   delay(delayTime);
-  SGst.run(STP::POS);
+ step::move(STP::POS);
   delay(2*delayTime);
-  SGst.home();
+ step::home();
   delay(delayTime);
-  SGst.run(-STP::POS);
+ step::move(-STP::POS);
   delay(delayTime);
-  SGst.run(-STP::POS);
+ step::move(-STP::POS);
   delay(2*delayTime);
   return;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <AccelStepper.h>
 #include "config.hpp"
 #include "Sensors.hpp"
 #include "Drivers.hpp"
@@ -9,7 +10,7 @@ extern MP6550 SLdc;
 extern MP6550 HWdc;
 extern ServoExp HSsv;
 extern ServoExp COsv;
-extern StepExp SGst;
+extern AccelStepper SGst;
 //extern A4988 SGst;
 extern Sensor::Endstops WGes;
 extern Sensor::Endstops SLes;
@@ -90,6 +91,11 @@ namespace serv {
     void couple();
     void hammerstop();
     void hammergo();
+}
+
+namespace step {
+    void home();
+    void move(int steps);
 }
 
 void check();

@@ -163,6 +163,30 @@ void IdentifyES(){
   }
 }
 
+namespace step{
+
+void home(){
+  Serial.println("Homing");
+  int homing = -1;
+  while(SGha.read() == LOW){
+    SGst.moveTo(homing);
+    homing--;
+    SGst.run();
+    delayMicroseconds(500);
+  }
+  Serial.println("Homed");
+  SGst.setCurrentPosition(0);
+  return;
+}
+
+void move(int steps){
+  SGst.moveTo(steps);
+  SGst.runToPosition();
+  return;
+}
+
+}
+
 void check(){
   if(ERROR_MANAGEMENT == false){
     return;

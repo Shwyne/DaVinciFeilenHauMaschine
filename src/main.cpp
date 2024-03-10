@@ -5,7 +5,7 @@ MP6550 SLdc(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP, SL::REVERSED, SL::AUTO_SLEEP)
 MP6550 HWdc(pin::HW_IN1, pin::HW_IN2, pin::HW_SLP, HW::REVERSED, HW::AUTO_SLEEP); // Motor Hammerwheel (In1, In2, Sleep)
 ServoExp HSsv(pin::HS_SRV, HS::MIN, HS::MAX); // Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp COsv(pin::CO_SRV, COUP::MIN, COUP::MAX); // Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
-StepExp SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_EN, pin::STP_M0, pin::STP_M1, pin::STP_M2, pin::SG_HALL); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
+AccelStepper SGst(AccelStepper::DRIVER, pin::STP_STP, pin::STP_DIR); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 //A4988 SGst(STP::SPR, pin::STP_DIR, pin::STP_STP, pin::STP_M0, pin::STP_M1,pin::STP_M2); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 Sensor::Endstops WGes(pin::WG_ES_T, pin::WG_ES_B); // Endschalter Weight (BottomPin, TopPin, TriggerState)
 Sensor::Endstops SLes(pin::SL_ES_R, pin::SL_ES_L); // Endschalter Slider (LeftPin, RightPin, TriggerState)
@@ -41,9 +41,13 @@ void setup() {
   }
 
   // Sign-Stepper Setup:
-  SGst.begin(STP::RPM, STP::MICRO_STEPS);
+  SGst.setMaxSpeed(5000.0); // Increased from 5000.0 to 50000.0
+  SGst.setAcceleration(1000.0);
   digitalWrite(pin::STP_SLP, HIGH);
   digitalWrite(pin::STP_RST, HIGH);
+  digitalWrite(pin::STP_M0, HIGH);
+  digitalWrite(pin::STP_M1, HIGH);
+  digitalWrite(pin::STP_M2, HIGH);
 
   // Servo-Setup:
   HSsv.attach(); // Initializes Servo Hammerstop
@@ -88,8 +92,17 @@ void inline dloop() {
 //*IDLE: Waiting for Go-Signal
 
 void inline idling(){
-  if(SGst.getPosition() != 0 && STP::ENABLED == true){
-    SGst.home();
+  if(SGst.currentPosition() != 0 && STP::ENABLED == true){
+    Serial.println("Homing");
+    int homing = -1;
+    while(SGha.read() == LOW){
+      SGst.moveTo(homing);
+      homing--;
+      SGst.run();
+      delayMicroseconds(500);
+    }
+    Serial.println("Homed");
+    SGst.setCurrentPosition(0);
     check();
   }
   Go.updateLED(LED::GREEN);
@@ -103,7 +116,8 @@ void inline idling(){
 void inline running(){
   Go.updateLED(LED::CYAN);
   if(STP::ENABLED == true){
-    SGst.run(STP::POS);
+    SGst.moveTo(STP::POS);
+    SGst.runToPosition();
     check();
   }
   HWdc.run(HW::SPEED);
@@ -146,7 +160,8 @@ void inline resetting(){
 
   Go.updateLED(LED::YELLOW);
   if(STP::ENABLED == true){
-    SGst.run(STP::POS);
+    SGst.moveTo(2*STP::POS);
+    SGst.runToPosition();
     check();
   }
 
@@ -247,6 +262,17 @@ void initStateOfMachine(){
   check();
   serv::couple();
   check();
+  Serial.println("Homing");
+    int homing = -1;
+    while(SGha.read() == LOW){
+      SGst.moveTo(homing);
+      homing--;
+      SGst.run();
+      delay(1);
+    }
+    Serial.println("Homed");
+    SGst.setCurrentPosition(0);
+    check();
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
 }
