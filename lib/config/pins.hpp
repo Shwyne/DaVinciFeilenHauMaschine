@@ -47,7 +47,7 @@ constexpr uint8_t GO_LED_B =53; // LED "Go"
 
 
 //*Sonstiges:
-constexpr uint8_t CLEAR_ERROR = 31; // Taster "Clear Error"
-constexpr uint8_t FAN = 29; // Lüfter
+constexpr uint8_t CLEAR_ERROR = 29; // Taster "Clear Error"
+constexpr uint8_t FAN = 31; // Lüfter
 
 } // namespace pin

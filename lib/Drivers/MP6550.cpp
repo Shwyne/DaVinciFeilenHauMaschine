@@ -86,6 +86,16 @@ void MP6550::brake() {
   return;
 }
 
+void MP6550::coast() {
+  digitalWrite(IN1pin, LOW);
+  digitalWrite(IN2pin, LOW);
+  speed = 0;
+  if(autoSleep) {
+    this->sleep();
+  }
+  return;
+}
+
 void MP6550::sleep() {
   if (SLPpin != 255) {
     if (speed != 0)
@@ -116,9 +126,4 @@ Status MP6550::sleepState() {
     }
   }
   return Status::Active;
-}
-
-MP6550::~MP6550() {
-  this->brake();
-  return;
 }
