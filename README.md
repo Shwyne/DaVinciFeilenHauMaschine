@@ -8,7 +8,7 @@ Dependencies
 ==============
 
     <Servo.h> by Michael Margolis
-    <StepperDriver.h> by Laurentiu Badea
+    <Accelstepper.h> by Waspinator
 
 
 Hardware included:
