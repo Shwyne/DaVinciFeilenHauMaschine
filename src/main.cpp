@@ -29,6 +29,8 @@ void inline EndstopsRun();
 void inline EndstopsReset();
 void inline resetting();
 
+void inline errorLoop();
+
 void setup() { 
 
   //*Serial-Setup:
@@ -39,10 +41,13 @@ void setup() {
 
   //*EEPROM Error-Checking:
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
-  if(hasErrorEEPROM() && ERROR_MANAGEMENT){
+  /*if(hasErrorEEPROM() && ERROR_MANAGEMENT){
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
-    printError();
-    showErrorLED();
+    //printError();
+    errorLoop();
+  }*/
+  if(hasErrorEEPROM()){
+    errorLoop();
   }
 
   pinMode(pin::FAN, OUTPUT); //Initializes the fan (if available)
@@ -51,7 +56,7 @@ void setup() {
   SGst.setMaxSpeed(5000.0);
   SGst.setAcceleration(1000.0);
   digitalWrite(pin::STP_RST, HIGH);
-  digitalWrite(pin::STP_SLP, HIGH);
+  digitalWrite(pin::STP_SLP, LOW);
   step::setMicroSteps(STP::MICRO_STEPS);
 
   //* Servo-Setup:
@@ -64,13 +69,22 @@ void setup() {
   COsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
-  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
+  //initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
 }
 
 void loop() {
-  dloop();
+  Serial.println(Go.read());
+  /*if(Go.read() == true){
+    Serial.println("GO PRESSED");
+    if(Go.read() == false){
+      Serial.println("GO RELEASED");
+      errorLoop();
+    }
+  }*/
+ 
+  //dloop();
 }
 
 void inline dloop() {
@@ -99,6 +113,7 @@ void inline dloop() {
 void inline idling(){
   if(SGst.currentPosition() != 0 && STP::ENABLED == true){
     Serial.println("Homing");
+    digitalWrite(pin::STP_SLP, HIGH);
     int homing = -1;
     while(SGha.read() == LOW){
       SGst.moveTo(homing);
@@ -108,6 +123,7 @@ void inline idling(){
     }
     Serial.println("Homed");
     SGst.setCurrentPosition(0);
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
   Go.updateLED(LED::GREEN);
@@ -122,8 +138,10 @@ void inline running(){
   digitalWrite(pin::FAN, HIGH); //Turns on the fan (if available)
   Go.updateLED(LED::CYAN);
   if(STP::ENABLED == true){
+    digitalWrite(pin::STP_SLP, HIGH);
     SGst.moveTo(STP::POS);
     SGst.runToPosition();
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
   HWdc.run(HW::SPEED);
@@ -212,8 +230,10 @@ void inline resetting(){
   Go.updateLED(LED::YELLOW);
 
   if(STP::ENABLED == true){
+    digitalWrite(pin::STP_SLP, HIGH);
     SGst.moveTo(2*STP::POS);
     SGst.runToPosition();
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
 
@@ -225,7 +245,7 @@ void inline resetting(){
 
   if(DEBUG>0) Serial.println("RESET: Motors reversed, waiting for endstops.");
   
-  if(fullReset){
+  if(SLes.read() == Slider::LEFT){
     SLdc.run(-SL::RS_SPEED);
     HWdc.run(-HW::RS_SPEED);
     FullReset();
@@ -317,5 +337,36 @@ void initStateOfMachine(){
     check();
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
+}
+
+void inline errorLoop(){
+  Go.updateLED(LED::RED);
+  EEPROM.write(0, 1);
+  ctime = millis();
+  bool off = false;
+   while(true){
+      if(millis() - ctime > 1000){
+        if(off){
+          Go.updateLED(LED::RED);
+          off = false;
+        }
+        else{
+          Go.updateLED(LED::OFF);
+          off = true;
+        }
+        ctime = millis();
+      }
+      if(digitalRead(pin::CLEAR_ERROR) == LOW){
+        Go.updateLED(LED::MAGENTA);
+        delay(2000);
+        Go.updateLED(LED::WHITE);
+        if(digitalRead(pin::CLEAR_ERROR) == LOW){
+          EEPROM.write(0, 0);
+          delay(1000);
+          Go.updateLED(LED::OFF);
+          return;
+        }
+      }
+    }
 }
  

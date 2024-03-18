@@ -12,7 +12,7 @@ constexpr int DELAY = 1000;
 
 //----------------------------------------------------
 //Debugging and Error-Management:
-constexpr uint8_t DEBUG = 0;    //0 = off, 1 = basic info, 2 = detailed info
+constexpr uint8_t DEBUG = 1;    //0 = off, 1 = basic info, 2 = detailed info
 constexpr bool ERROR_MANAGEMENT = false;   // 0 or true = off, 1 or false = on
 constexpr bool EEPROM_ENABLED = false;       // 0 or true = off, 1 or false = on
 constexpr uint16_t EEPROM_ADDRESS = 0;  //Adress where the error-flag is stored
