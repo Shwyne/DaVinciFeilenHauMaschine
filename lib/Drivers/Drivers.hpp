@@ -25,7 +25,6 @@ public:
   MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin = 255, bool reversed = false, bool autoSleep = false);
   
   void run(int speed);  //Run the Motor with a specific speed (-255 to 255)
-  void coast();
   void brake();         //Brake the Motor
   void coast();         //Coast the Motor
 
