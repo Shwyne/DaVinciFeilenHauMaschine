@@ -23,6 +23,7 @@ public:
   MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin = 255, bool reversed = false, bool autoSleep = false);
   
   void run(int speed);
+  void coast();
   void brake();
 
   int getSpeed();
@@ -30,8 +31,6 @@ public:
 
   void sleep();
   void wake();
-  
-  ~MP6550();
 
 };
 

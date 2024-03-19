@@ -2,6 +2,15 @@
 
 /* Table for Running this driver:
 
+* This library is for the MP6550 H-Bridge Motor Driver
+* It is used to control the speed and direction of a motor using two PWM signals and a sleep pin
+* Contains functions to run the motor, brake the motor, coast the motor, and put the driver to sleep
+* Created by: Timo Steinhilber, 2023
+
+* The MP6550 is a dual H-Bridge motor driver with two PWM inputs and a sleep pin
+* SLP pin has to be pulled HIGH (5V) if not controlled by a microcontroller
+* IN1 and IN2 are used to control the direction of the motor:
+
 1. Input Logic Truth Table:
   IN1  |  IN2  | OUT1  | OUT2  | Function
 ----------------------------------------------
@@ -30,19 +39,21 @@
 
 */
 
+// Constructor for MP6550 class (Only IN1 and IN2 are required, rest is optional)
 MP6550::MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin, bool reversed, bool autoSleep) {
-  this->IN1pin = IN1pin;
-  this->IN2pin = IN2pin;
-  this->SLPpin = SLPpin;
-  this->autoSleep = autoSleep;
-  this->reversed = reversed;
-  this->speed = 0;
+  this->IN1pin = IN1pin;  // Pin for IN1
+  this->IN2pin = IN2pin;  // Pin for IN2
+  this->SLPpin = SLPpin;  // Pin for SLP (default: 255)
+  this->autoSleep = autoSleep;  // Auto sleep mode (default: false)
+  this->reversed = reversed;    // Reversed motor direction (default: false)
+  this->speed = 0;          // Speed starts at 0
 
-  pinMode(this->IN1pin, OUTPUT);
-  pinMode(this->IN2pin, OUTPUT);
-  digitalWrite(this->IN1pin, LOW);
-  digitalWrite(this->IN2pin, LOW);
+  pinMode(this->IN1pin, OUTPUT);  // Set IN1pin as output
+  pinMode(this->IN2pin, OUTPUT);  // Set IN2pin as output
+  digitalWrite(this->IN1pin, LOW);  // Set IN1pin to LOW 
+  digitalWrite(this->IN2pin, LOW);  // Set IN2pin to LOW (-> Idle state)
 
+  // If SLPpin is used, set it as output and set it to HIGH -> Active
   if (this->SLPpin != 255) {
     pinMode(this->SLPpin, OUTPUT);
     digitalWrite(this->SLPpin, HIGH);
@@ -50,22 +61,23 @@ MP6550::MP6550(uint8_t IN1pin, uint8_t IN2pin, uint8_t SLPpin, bool reversed, bo
   return;
 }
 
-void MP6550::run(int speed) {
+// Run the motor with a specific speed
+void MP6550::run(int speed) { //Input: Speed (-255 to 255)
   // Checks if driver in sleep mode (SLP == LOW) and if SLP is used (SLP != 255)
   if(SLPpin != 255 && sleepState() == Status::Standby) {
     this->wake();
   }
   // constraints input speed to -255 to 255, because of 8bit PWM control
   this->speed = constrain(speed, -255, 255);
-  // 
+  // If speed is positive and not reversed or speed is negative and reversed
   if ((this->speed > 0 && !reversed) || (this->speed < 0 && reversed)) {
     analogWrite(IN1pin, abs(this->speed));
     digitalWrite(IN2pin, LOW);
-  } 
+  } //if speed is negative and not reversed or speed is positive and reversed
   else if ((this->speed < 0 && !reversed) || (this->speed > 0 && reversed)) {
     digitalWrite(IN1pin, LOW);
     analogWrite(IN2pin, abs(this->speed));
-  }
+  } //if speed is 0
   else {
     digitalWrite(IN1pin, LOW);
     digitalWrite(IN2pin, LOW);
@@ -73,52 +85,64 @@ void MP6550::run(int speed) {
   return;
 }
 
+// Brake the motor
 void MP6550::brake() {
-  digitalWrite(IN1pin, HIGH);
-  digitalWrite(IN2pin, HIGH);
-  speed = 0;
-  delay(500);
-  digitalWrite(IN1pin, LOW);
-  digitalWrite(IN2pin, LOW);
-  if(autoSleep) {
+  digitalWrite(IN1pin, HIGH); // Set IN1pin to HIGH
+  digitalWrite(IN2pin, HIGH); // Set IN2pin to HIGH -> leads to braking
+  speed = 0;  // Speed is 0
+  delay(500); // Delay to ensure the motor is stopped
+  digitalWrite(IN1pin, LOW);  // Set IN1pin to LOW
+  digitalWrite(IN2pin, LOW);  // Set IN2pin to LOW -> Idle state
+  if(autoSleep) { // If autoSleep is true, put driver to sleep
     this->sleep();
   }
   return;
 }
 
+// Coast the motor
+void MP6550::coast() {
+  digitalWrite(IN1pin, LOW);  // Set IN1pin to LOW
+  digitalWrite(IN2pin, LOW);  // Set IN2pin to LOW -> Idle state
+  speed = 0;  // Speed is 0
+  if(autoSleep) { // If autoSleep is true, put driver to sleep
+    this->sleep();
+  }
+  return;
+}
+
+// Put the driver to sleep
 void MP6550::sleep() {
-  if (SLPpin != 255) {
-    if (speed != 0)
-      this->brake();
-    digitalWrite(SLPpin, LOW);
+  if (SLPpin != 255) {  // If SLPpin is used
+    if (speed != 0) {  // If speed is not 0, brake the motor. Ensures braking is nessesary and coasting is possible
+      this->brake();  // Brake the motor
+    }
+    digitalWrite(SLPpin, LOW);  // Set SLPpin to LOW -> Standby
   }
   return;
 }
 
+// Wake the driver
 void MP6550::wake() {
-  if (SLPpin != 255) {
-    digitalWrite(SLPpin, HIGH);
+  if (SLPpin != 255) {  // If SLPpin is used
+    digitalWrite(SLPpin, HIGH); // Set SLPpin to HIGH -> Active
   }
   return;
 }
 
+// Get the current speed
 int MP6550::getSpeed() {
-   return speed;
+   return speed;  // Return speed as int (-255 to 255)
 }
 
+// Get the sleep state of the driver
 Status MP6550::sleepState() {
-  if (SLPpin != 255) {
-    if(digitalRead(SLPpin) == HIGH) {
+  if (SLPpin != 255) {  // If SLPpin is used
+    if(digitalRead(SLPpin) == HIGH) { // If SLPpin is HIGH -> Active
       return Status::Active;
     }
     else {
-      return Status::Standby;
+      return Status::Standby; // If SLPpin is LOW -> Standby
     }
   }
-  return Status::Active;
-}
-
-MP6550::~MP6550() {
-  this->brake();
-  return;
+  return Status::Active;  // If SLPpin is not used, return Active, because SLP is probably pulled HIGH permanently
 }
