@@ -25,8 +25,11 @@ void initStateOfMachine();
 void inline dloop();
 void inline idling();
 void inline running();
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst, bool reset = false);
+void inline EndstopsRun();
+void inline EndstopsReset();
 void inline resetting();
+
+void inline errorLoop();
 
 void setup() { 
 
@@ -38,20 +41,22 @@ void setup() {
 
   //*EEPROM Error-Checking:
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
-  if(hasErrorEEPROM() && ERROR_MANAGEMENT){
+  /*if(hasErrorEEPROM() && ERROR_MANAGEMENT){
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
-    printError();
-    showErrorLED();
+    //printError();
+    errorLoop();
+  }*/
+  if(hasErrorEEPROM()){
+    errorLoop();
   }
 
   pinMode(pin::FAN, OUTPUT); //Initializes the fan (if available)
-
-  Go.updateLED(LED::WHITE);
 
   //* Sign-Stepper Setup:
   SGst.setMaxSpeed(5000.0);
   SGst.setAcceleration(1000.0);
   digitalWrite(pin::STP_RST, HIGH);
+  digitalWrite(pin::STP_SLP, LOW);
   step::setMicroSteps(STP::MICRO_STEPS);
 
   //* Servo-Setup:
@@ -64,14 +69,22 @@ void setup() {
   COsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
-  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
+  //initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
-  if(DEBUG>0) Serial.println("Setup done.");    
-
+  if(DEBUG>0) Serial.println("Setup done.");
 }
 
 void loop() {
-  dloop();
+  Serial.println(Go.read());
+  /*if(Go.read() == true){
+    Serial.println("GO PRESSED");
+    if(Go.read() == false){
+      Serial.println("GO RELEASED");
+      errorLoop();
+    }
+  }*/
+ 
+  //dloop();
 }
 
 void inline dloop() {
@@ -83,7 +96,7 @@ void inline dloop() {
   running();
   if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
 
-  WaitingForEndstops(Weight::BOTTOM, Slider::LEFT, true);
+  EndstopsRun();
 
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
   
@@ -100,6 +113,7 @@ void inline dloop() {
 void inline idling(){
   if(SGst.currentPosition() != 0 && STP::ENABLED == true){
     Serial.println("Homing");
+    digitalWrite(pin::STP_SLP, HIGH);
     int homing = -1;
     while(SGha.read() == LOW){
       SGst.moveTo(homing);
@@ -109,6 +123,7 @@ void inline idling(){
     }
     Serial.println("Homed");
     SGst.setCurrentPosition(0);
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
   Go.updateLED(LED::GREEN);
@@ -123,57 +138,23 @@ void inline running(){
   digitalWrite(pin::FAN, HIGH); //Turns on the fan (if available)
   Go.updateLED(LED::CYAN);
   if(STP::ENABLED == true){
+    digitalWrite(pin::STP_SLP, HIGH);
     SGst.moveTo(STP::POS);
     SGst.runToPosition();
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
   HWdc.run(HW::SPEED);
   SLdc.run(SL::SPEED);
 }
 
-//*WAIT: Waiting for Endstops and then returns (brakeAtFirst = true: Brake at first reached endstop, brakeAtFirst = false: Brake when both endstops are reached)
-
-void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderState, bool brakeAtFirst, bool reset){
-  bool ReachedWeightTarget = false;
-  bool ReachedSliderTarget = false;
-  bool detectedMagnet = false;
+void inline EndstopsRun(){
+  if(DEBUG>1) Serial.println("RUN: Endstops waiting...");
   ctime = millis();
   hwtime = millis();
-  while((ReachedWeightTarget == false) || (ReachedSliderTarget == false)){
-    if(WGes.read() == WeightState && ReachedWeightTarget == false){
-      if(DEBUG>1) Serial.print("Weight reached Target");
-      ReachedWeightTarget = true;
-      HWdc.brake();
-      if(brakeAtFirst){
-        fullReset = false;
-        wtime = millis() - ctime;
-        stime += wtime;
-        SLdc.brake();
-        return;
-      }
-    }
-    if(SLes.read() == SliderState && ReachedSliderTarget == false){
-      if(DEBUG>1) Serial.print("Slider reached Target");
-      ReachedSliderTarget = true;
-      SLdc.brake();
-      if(brakeAtFirst){
-        fullReset = true;
-        HWdc.brake();
-        return;
-      }
-    }
-    if(reset){
-      if(wtime != 0 && (millis() - ctime) > wtime){
-        erCode = ErrCode::WG_TIMEOUT;
-        check();
-      }
-      if(stime != 0 && (millis() - ctime) > stime){
-        erCode = ErrCode::SL_TIMEOUT;
-        check();
-      }
-    }
-    else{
-      if(HWha.read() == HIGH && detectedMagnet == false){
+  bool detectedMagnet = false;
+  while(WGes.read() != Weight::BOTTOM && SLes.read() != Slider::LEFT){
+    if(HWha.read() == HIGH && detectedMagnet == false){
       detectedMagnet = true;
        hwtime = millis();
       }
@@ -184,15 +165,63 @@ void inline WaitingForEndstops(Weight::State WeightState, Slider::State SliderSt
         erCode = ErrCode::HW_TIMEOUT;
         check();
       }
-      if((millis() - wtime + stime) > SL::TIMEOUT && ReachedSliderTarget == false){
+      if((millis() - wtime + stime) > SL::TIMEOUT){
         erCode = ErrCode::SL_TIMEOUT;
         check();
       }
-    }
-    
   }
-  return;
+  if(DEBUG>1) Serial.print("RUN: Hit Endstops, starting ");
+  if(SLes.read() == Slider::LEFT){
+    fullReset = true;
+    Serial.println("full reset.");
+  }
+  else{
+    fullReset = false;
+    Serial.println("weight reset.");
+  }
+  HWdc.brake();
+  SLdc.brake();
 }
+
+void inline FullReset(){
+  if(DEBUG > 1) Serial.println("RESET: Endstops waiting...");
+  bool ReachedWeightTarget = false;
+  bool ReachedSliderTarget = false;
+  ctime = millis();
+  while((ReachedWeightTarget == false) || (ReachedSliderTarget == false)){
+    if(WGes.read() == Weight::TOP && ReachedWeightTarget == false){
+      if(DEBUG>1) Serial.print("Weight reached TOP");
+      ReachedWeightTarget = true;
+      HWdc.brake();
+    }
+    if(SLes.read() == Slider::RIGHT && ReachedSliderTarget == false){
+      if(DEBUG>1) Serial.print("Slider reached RIGHT");
+      ReachedSliderTarget = true;
+      SLdc.brake();
+    }
+    if(wtime != 0 && (millis() - ctime) > wtime){
+      erCode = ErrCode::WG_TIMEOUT;
+      check();
+    }
+    if(stime != 0 && (millis() - ctime) > stime){
+      erCode = ErrCode::SL_TIMEOUT;
+      check();
+    }
+  }
+}
+
+void inline WeightReset(){
+  if(DEBUG > 1) Serial.println("RESET: Endstops waiting...");
+  ctime = millis();
+  while(WGes.read() != Weight::TOP){
+    if(wtime != 0 && (millis() - ctime) > wtime){
+      erCode = ErrCode::WG_TIMEOUT;
+      check();
+    }
+  }
+  HWdc.brake();
+}
+
 
 //*RESET: Resetting the System
 
@@ -201,8 +230,10 @@ void inline resetting(){
   Go.updateLED(LED::YELLOW);
 
   if(STP::ENABLED == true){
+    digitalWrite(pin::STP_SLP, HIGH);
     SGst.moveTo(2*STP::POS);
     SGst.runToPosition();
+    digitalWrite(pin::STP_SLP, LOW);
     check();
   }
 
@@ -213,16 +244,17 @@ void inline resetting(){
   check();
 
   if(DEBUG>0) Serial.println("RESET: Motors reversed, waiting for endstops.");
-  if(fullReset == true){
+  
+  if(SLes.read() == Slider::LEFT){
     SLdc.run(-SL::RS_SPEED);
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
-    stime = 0;
-  }
-  else {
+    FullReset();
+  } 
+  else{
     HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, true, true);
-  }
+    WeightReset();
+  } 
+
   if(DEBUG>0) Serial.println("RESET: Endstops reached.");
   serv::hammergo();
   check();
@@ -235,6 +267,7 @@ void inline resetting(){
 //*Init: Initialize the System
 
 void initStateOfMachine(){
+  Go.updateLED(LED::WHITE);
   if(DEBUG>0){
     Serial.println("Press Go-Button to initialize the machine.");
     Go.waitForPress();
@@ -283,24 +316,9 @@ void initStateOfMachine(){
         break;
     }
  }
-  if(SLes.read() != Slider::RIGHT && WGes.read() != Weight::TOP){
-    if(DEBUG>1) Serial.print("INIT: Full | ");
-    SLdc.run(-SL::RS_SPEED);
-    HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
-  }
-  else if(SLes.read() != Slider::RIGHT){
-    if(DEBUG>1) Serial.print("Slider -> RIGHT | ");
-    SLdc.run(-SL::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
-    SLdc.brake();
-  }
-  else if(WGes.read() != Weight::TOP){
-    if(DEBUG>1) Serial.print("Weight -> TOP | ");
-    HWdc.run(-HW::RS_SPEED);
-    WaitingForEndstops(Weight::TOP, Slider::RIGHT, false, true);
-    HWdc.brake();
-  }
+ SLdc.run(-SL::RS_SPEED);
+ HWdc.run(-HW::RS_SPEED);
+ FullReset();
   
   serv::hammergo();
   check();
@@ -319,5 +337,36 @@ void initStateOfMachine(){
     check();
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
+}
+
+void inline errorLoop(){
+  Go.updateLED(LED::RED);
+  EEPROM.write(0, 1);
+  ctime = millis();
+  bool off = false;
+   while(true){
+      if(millis() - ctime > 1000){
+        if(off){
+          Go.updateLED(LED::RED);
+          off = false;
+        }
+        else{
+          Go.updateLED(LED::OFF);
+          off = true;
+        }
+        ctime = millis();
+      }
+      if(digitalRead(pin::CLEAR_ERROR) == LOW){
+        Go.updateLED(LED::MAGENTA);
+        delay(2000);
+        Go.updateLED(LED::WHITE);
+        if(digitalRead(pin::CLEAR_ERROR) == LOW){
+          EEPROM.write(0, 0);
+          delay(1000);
+          Go.updateLED(LED::OFF);
+          return;
+        }
+      }
+    }
 }
  
