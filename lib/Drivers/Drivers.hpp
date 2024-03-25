@@ -1,16 +1,4 @@
-#pragma once
-
-/*
-* This is the Drivers Library for controlling actors with an arduino microcontroller
-* It contains classes for the MP6550 Motor-Driver and an expanded version of the Servo class
-*/
-
 #include <Arduino.h>
-
-enum class Status : uint8_t {   //Status enum for components (e.g. sleepState())
-  Standby,  //Status used for components in Standby
-  Active   //Status used for components while wake
-};
 
 //*----------------------- MP6550 -----------------------*//
 
@@ -35,7 +23,7 @@ public:
 
 
   int getSpeed();       //Get the current speed of the Motor and returns the value
-  Status sleepState();  //Get the current sleepState of the Motor and returns the State as an enum (Line 5)
+  bool isSleeping();    //Get the current sleepState of the Motor and returns true if sleeping, false if not
 
   void sleep();         //Put the Motor to Sleep
   void wake();          //Wake the Motor up

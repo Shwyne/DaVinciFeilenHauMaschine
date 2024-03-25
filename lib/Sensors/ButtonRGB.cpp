@@ -2,52 +2,69 @@
 
 namespace Sensor {
 
+//* Constructor for Button class (Only Butpin is required, rest is optional)
 Button::Button(uint8_t Butpin, uint8_t Rpin, uint8_t Gpin, uint8_t Bpin) {
-    this->Butpin = Butpin;
-    this->Rpin = Rpin;
-    this->Gpin = Gpin;
-    this->Bpin = Bpin;
+    this->Butpin = Butpin;  // Pin for the Button
+    this->Rpin = Rpin;      // Pin for the Red LED
+    this->Gpin = Gpin;      // Pin for the Green LED
+    this->Bpin = Bpin;      // Pin for the Blue LED
 
-    pinMode(Butpin, INPUT_PULLUP);
-    pinMode(Rpin, OUTPUT);
-    pinMode(Gpin, OUTPUT);
-    pinMode(Bpin, OUTPUT);
+    // pin setup:
+    pinMode(Butpin, INPUT_PULLUP);  // Set Butpin as input with pullup
+    pinMode(Rpin, OUTPUT);          // Set Rpin as output
+    pinMode(Gpin, OUTPUT);          // Set Gpin as output
+    pinMode(Bpin, OUTPUT);          // Set Bpin as output
 
-    digitalWrite(Rpin, LOW);
-    digitalWrite(Gpin, LOW);
-    digitalWrite(Bpin, LOW);
+    // Turn LED OFF:
+    digitalWrite(Rpin, LOW);        // Set Rpin to LOW
+    digitalWrite(Gpin, LOW);        // Set Gpin to LOW
+    digitalWrite(Bpin, LOW);        // Set Bpin to LOW
     return;
 }
 
+//* Read the Button and returns the state
 bool Button::read() {
+    // If the Button is pressed, set triggered to true
     if(digitalRead(Butpin) == LOW){
         triggered = true;
     }
+    // If the Button is not pressed, set triggered to false
     else{
         triggered = false;
     }
+    // Return the state of the Button
     return triggered;
 }
 
+//* Check if the state of the Button has changed, returns true if changed
 bool Button::changed() {
+    // Save the previous state of the Button
     bool prevState = triggered;
+    // If the state of the Button has changed, return true
     if(read() != prevState){
         return true;
     }
+    // If the state of the Button has not changed, return false
     return false;
 }
 
+//* Wait for the Button to be pressed, blocks the programm!
 void Button::waitForPress() {
+    // Wait for the Button to be pressed
     while(this->read() != true){
         delay(1);
     }
+    // Wait for the Button to be released
     while(this->read() != false){
         delay(1);
     }
+    // Return
     return;
 }
-void Button::updateLED(uint8_t mode){
 
+//* Update the LED of the Button (By Number)
+void Button::updateLED(uint8_t mode){
+//(0 = off, 1 = red, 2 = green, 3 = blue, 4 = yellow, 5 = cyan, 6 = magenta, 7 = white)
 switch(mode){
     case 0: //OFF
         if(Rpin != 255) digitalWrite(Rpin, LOW);
@@ -111,10 +128,11 @@ switch(mode){
     }
 }
 
+//* Update the LED of the Button with custom RGB values, needs PWM pins
 void Button::updateLED(uint8_t red, uint8_t green, uint8_t blue){
-    if(Rpin != 255) analogWrite(Rpin, red);
-    if(Gpin != 255) analogWrite(Gpin, green);
-    if(Bpin != 255) analogWrite(Bpin, blue);
+    if(Rpin != 255) analogWrite(Rpin, red);     // Set the brightness of the Red LED, if Rpin is defined
+    if(Gpin != 255) analogWrite(Gpin, green);   // Set the brightness of the Green LED, if Gpin is defined
+    if(Bpin != 255) analogWrite(Bpin, blue);    // Set the brightness of the Blue LED, if Bpin is defined
     return;
 }
 
