@@ -27,13 +27,4 @@ bool HallSwitch::changed() {
     return false;
 }
 
-void HallSwitch::printData() {
-  Serial.println("\nHALL:");
-  Serial.print("Pin: ");
-  Serial.println(pin);
-  Serial.print("Trigger: ");
-  Serial.println((triggered == HIGH) ? "HIGH" : "LOW");
-  Serial.println((read() == triggered) ? "Triggered" : "Untriggered");
-}
-
 }

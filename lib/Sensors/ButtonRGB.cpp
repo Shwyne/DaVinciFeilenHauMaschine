@@ -46,85 +46,75 @@ void Button::waitForPress() {
     }
     return;
 }
-
 void Button::updateLED(uint8_t mode){
-    switch(mode){
-        case 0: //OFF
-            digitalWrite(Rpin, LOW);
-            digitalWrite(Gpin, LOW);
-            digitalWrite(Bpin, LOW);
-            break;
-        case 1: //RED
-            digitalWrite(Rpin, HIGH);
-            digitalWrite(Gpin, LOW);
-            digitalWrite(Bpin, LOW);
-            break;
-        case 2: //GREEN
-            digitalWrite(Rpin, LOW);
-            digitalWrite(Gpin, HIGH);
-            digitalWrite(Bpin, LOW);
-            break;
-        case 3: //BLUE
-            digitalWrite(Rpin, LOW);
-            digitalWrite(Gpin, LOW);
-            digitalWrite(Bpin, HIGH);
-            break;
-        case 4: //YELLOW
-            digitalWrite(Rpin, HIGH);
-            digitalWrite(Gpin, HIGH);
-            digitalWrite(Bpin, LOW);
-            break;
-        case 5: //CYAN
-            digitalWrite(Rpin, LOW);
-            digitalWrite(Gpin, HIGH);
-            digitalWrite(Bpin, HIGH);
-            break;
-        case 6: //MAGENTA
-            digitalWrite(Rpin, HIGH);
-            digitalWrite(Gpin, LOW);
-            digitalWrite(Bpin, HIGH);
-            break;
-        case 7: //WHITE
+
+switch(mode){
+    case 0: //OFF
+        if(Rpin != 255) digitalWrite(Rpin, LOW);
+        if(Gpin != 255) digitalWrite(Gpin, LOW);
+        if(Bpin != 255) digitalWrite(Bpin, LOW);
+        break;
+    case 1: //RED
+        if(Rpin != 255) digitalWrite(Rpin, HIGH);
+        if(Gpin != 255) digitalWrite(Gpin, LOW);
+        if(Bpin != 255) digitalWrite(Bpin, LOW);
+        break;
+    case 2: //GREEN
+        if(Rpin != 255) digitalWrite(Rpin, LOW);
+        if(Gpin != 255) digitalWrite(Gpin, HIGH);
+        if(Bpin != 255) digitalWrite(Bpin, LOW);
+        break;
+    case 3: //BLUE
+        if(Rpin != 255) digitalWrite(Rpin, LOW);
+        if(Gpin != 255) digitalWrite(Gpin, LOW);
+        if(Bpin != 255) digitalWrite(Bpin, HIGH);
+        break;
+    case 4: //YELLOW
+        if(Rpin != 255 && Gpin != 255) {
             digitalWrite(Rpin, HIGH);
             digitalWrite(Gpin, HIGH);
+        } else {
+            updateLED(0); // turn off the LED if either pin is not defined
+        }
+        if(Bpin != 255) digitalWrite(Bpin, LOW);
+        break;
+    case 5: //CYAN
+        if(Gpin != 255 && Bpin != 255) {
+            digitalWrite(Gpin, HIGH);
             digitalWrite(Bpin, HIGH);
-            break;
-        default:    //DEFAULT: OFF
-            digitalWrite(Rpin, LOW);
-            digitalWrite(Gpin, LOW);
-            digitalWrite(Bpin, LOW);
-            break;
+        } else {
+            updateLED(0); // turn off the LED if either pin is not defined
+        }
+        if(Rpin != 255) digitalWrite(Rpin, LOW);
+        break;
+    case 6: //MAGENTA
+        if(Rpin != 255 && Bpin != 255) {
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Bpin, HIGH);
+        } else {
+            updateLED(0); // turn off the LED if either pin is not defined
+        }
+        if(Gpin != 255) digitalWrite(Gpin, LOW);
+        break;
+    case 7: //WHITE
+        if(Rpin != 255 && Gpin != 255 && Bpin != 255) {
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, HIGH);
+        } else {
+            updateLED(0); // turn off the LED if any pin is not defined
+        }
+        break;
+    default:    //DEFAULT: OFF
+        updateLED(0);
+        break;
     }
-    return;
 }
 
 void Button::updateLED(uint8_t red, uint8_t green, uint8_t blue){
-    this->red = red;
-    this->green = green;
-    this->blue = blue;
-    analogWrite(Rpin, this->red);
-    analogWrite(Gpin, this->green);
-    analogWrite(Bpin, this->blue);
-    return;
-}
-
-
-
-void Button::printData() {
-    Serial.println("\nButton-Data:");
-    Serial.println("----------------------");
-    Serial.print("But-Pin: ");
-    Serial.println(Butpin);
-    Serial.print("R-Pin: ");
-    Serial.println(Rpin);
-    Serial.print("G-Pin: ");
-    Serial.println(Gpin);
-    Serial.print("B-Pin: ");
-    Serial.println(Bpin);
-    Serial.println(read()? "Triggered" : "Untriggered");
-    Serial.println("----------------------\n");
-    Serial.println("End of Data");
-    Serial.println("-----------------");
+    if(Rpin != 255) analogWrite(Rpin, red);
+    if(Gpin != 255) analogWrite(Gpin, green);
+    if(Bpin != 255) analogWrite(Bpin, blue);
     return;
 }
 

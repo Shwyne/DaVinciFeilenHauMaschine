@@ -34,27 +34,4 @@ bool Endstops::changed() {
     return false;
 }
 
-void Endstops::printData() {
-    Serial.println("\nEndstop:");
-    Serial.print("Pin 1 | 2 : ");
-    Serial.print(pin1);
-    Serial.print(" | ");
-    Serial.println(pin2);
-    Serial.print("State: ");
-    switch(read()){
-        case 0:
-            Serial.println("Untriggered");
-            break;
-        case 1:
-            Serial.println("Pin1 Triggered");
-            break;
-        case 2:
-            Serial.println("Pin2 Triggered");
-            break;
-        case 3:
-            Serial.println("Both Triggered");
-            break;
-    }
-    return;
-}
 }
