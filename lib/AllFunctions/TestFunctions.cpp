@@ -4,212 +4,255 @@
 
 namespace testComp { //*Testfunctions for components
 
-void TestMP6550(MP6550 DC, uint8_t ButtonPin){
-  bool ButtonPresent = false;
-  if(ButtonPin != 255){
-    Serial.println("Press and hold the button to run the motor.");
-    Serial.println(" Releasing and pressing again will change the direction.");
-    ButtonPresent = true;
-    pinMode(ButtonPin, INPUT_PULLUP);
-  }
-  bool reverse = false;
-  if(ButtonPresent){
-    while(true){
-      if(digitalRead(ButtonPin) == LOW){
-        if(reverse){
-          Serial.println("Forward");
-          DC.run(255);
-          reverse = false;
-        }
-        else{
-          Serial.println("Reverse");
-          DC.run(-255);
-          reverse = true;
-        }
-        while(digitalRead(ButtonPin) == LOW){
-          delay(1);
-        }
-        DC.brake();
-      }
-    }
-  }
-  else{
-    Serial.println("Running Motor forward.");
-    DC.run(255);
-    delay(5000);
-    Serial.println("Braking Motor.");
-    DC.brake();
-    delay(1000);
-    Serial.println("Running Motor reverse.");
-    DC.run(-255);
-    delay(5000);
-    Serial.println("Braking Motor.");
-    DC.brake();
-  }
+void TestMP6550(MP6550 DC, uint8_t speed){
+  //Testing the Motor driver. The Motor will run forward, then brake, then run reverse, then brake.
+  //Running forward and changing the direction will happen after pressing the Go-Button.
+  //The LED will change color after each step (forward = cyan, reverse = yellow, brake = red)
+
+  Serial.println("Testing Motor-Driver:");
+  Serial.println("Press the button to start the Motor-Driver-Test.");
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+
+  Serial.println("Moving forward.");
+  Go.updateLED(LED::CYAN);
+  DC.run(speed);
+
+  Go.waitForPress();
+  Serial.println("Braking.");
+  Go.updateLED(LED::RED);
+  DC.brake();
+  delay(1000);
+
+  Serial.println("Moving reverse.");
+  Go.updateLED(LED::YELLOW);
+  DC.run(-speed);
+
+  Go.waitForPress();
+  Serial.println("Braking.");
+  Go.updateLED(LED::RED);
+  DC.brake();
+  delay(1000);
+
+  Serial.println("Test finished.");
+  Serial.println("--------------------");
   return;
 }
 
-void TestServo(ServoExp srv, uint8_t ButtonPin, uint8_t pos1, uint8_t pos2){
-  bool ButtonPresent = false;
-  if(ButtonPin != 255){
-    Serial.println("Press the button to move the servo to next position.");
-    ButtonPresent = true;
-    pinMode(ButtonPin, INPUT_PULLUP);
-  }
-  bool reverse = false;
-  if(ButtonPresent){
-    while(true){
-      if(digitalRead(ButtonPin) == LOW){
-        if(reverse){
-          Serial.println("Position 1");
-          srv.write(pos1);
-          reverse = false;
-        }
-        else{
-          Serial.println("Position 2");
-          srv.write(pos2);
-          reverse = true;
-        }
-        while(digitalRead(ButtonPin) == LOW){
-          delay(1);
-        }
-      }
-    }
-  }
-  else{
-    Serial.println("Moving to Position 1.");
-    srv.write(pos1);
-    delay(500);
-    Serial.println("Moving to Position 2.");
-    srv.write(pos2);
-    delay(500);
-    Serial.println("Moving to Position 1.");
-    srv.write(pos1);
-    delay(500);
-    Serial.println("Moving to Position 2.");
-    srv.write(pos2);
-    delay(500);
-  }
+void TestServo(ServoExp srv, uint8_t pos1, uint8_t pos2){
+  //Testing the Servo. The Servo will move to a specific position, then wait for the button to move to the next position.
+  //The LED will change color after each step (Position 1 = yellow, Position 2 = cyan, Wait for Button = green)
+  
+  Serial.println("Testing Servo:");
+  Serial.println("Press the button to start the Servo-Test.");
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  
+  Go.updateLED(LED::YELLOW);
+  Serial.print("Moving to Position 1: ");
+  Serial.print(pos1);
+  Serial.println("°");
+  srv.runToPos(pos1);
+  delay(1000);
+
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  
+  Go.updateLED(LED::CYAN);
+  Serial.print("Moving to Position 2: ");
+  Serial.print(pos2);
+  Serial.println("°");
+  srv.runToPos(pos2);
+  delay(1000);
+
+  Serial.println("Test finished.");
   return;
 }
 
-void TestStepper(AccelStepper stp, uint8_t ButtonPin){
-  /*bool ButtonPresent = false;
-  if(ButtonPin != 255){
-    Serial.println("Press the button to move the stepper 200 Steps.");
-    Serial.println("The Direction will change after each press.");
-    ButtonPresent = true;
-    pinMode(ButtonPin, INPUT_PULLUP);
-  }
-  bool reverse = false;
-  if(ButtonPresent){
-    while(true){
-      if(digitalRead(ButtonPin) == LOW){
-        if(reverse){
-          Serial.println("REV: 200 Steps");
-          stp.run(-200);
-          reverse = false;
-        }
-        else{
-          Serial.println("FWD: 200 Steps");
-          stp.run(200);
-          reverse = true;
-        }
-        while(digitalRead(ButtonPin) == LOW){
-          delay(1);
-        }
-      }
-    }
-  }
-  else{
-    Serial.println("Moving 200 Steps forward.");
-    stp.run(200);
-    delay(500);
-    Serial.println("Moving 200 Steps reverse.");
-    stp.run(-200);
-    delay(500);
-    Serial.println("Moving 200 Steps forward.");
-    stp.run(200);
-    delay(500);
-    Serial.println("Moving 200 Steps reverse.");
-    stp.run(-200);
-  }*/
+void TestStepper(AccelStepper stp){
+  //Testing the Stepper. The Stepper will home, then move to a specific position, then move to another position.
+  //The Stepper will go to the next step after pressing the Go-Button.
+  //The LED will change color after each step (Home = yellow, Position 1 = cyan, Position 2 = magenta)
+
+  Serial.println("Testing Stepper:");
+  Serial.println("Press the button to start the Stepper-Test.");
+
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+
+  Serial.println("Homing Stepper.");
+  step::home();
+  delay(1000);
+
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  Go.updateLED(LED::CYAN);
+
+  Serial.println("Moving Stepper to Position 1.");
+  step::move(STP::POS);
+  delay(1000);
+
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  Go.updateLED(LED::MAGENTA);
+
+  Serial.println("Moving Stepper to Position 2.");
+  step::move(STP::POS);
+  delay(1000);
+
   return;
 }
 
-void TestEndstops(Sensor::Endstops es, Sensor::Button button, bool UseLED){
+void TestEndstops(Sensor::Endstops es){
+  //Testing the Endstops. The Endstops will be checked for their status and the LED will change color accordingly.
+  //The LED will change color after each step (Untriggered = white, Endstop 1 = green, Endstop 2 = cyan, Both Endstops = red)
+  //Pressing the Go-Button will end the test.
 
   Serial.println("Testing Endstops:");
+  uint8_t status = 0;
+  uint8_t lastStatus = 0;
+
   while(true){
-    if(es.read() == 0){
-      Serial.println("Endstop is not triggered.");
-      if(UseLED){
-        button.updateLED(LED::RED);
+    status = es.read();
+    if(status != lastStatus){
+      switch(status){
+        case 0:
+          Serial.println("Endstop is not triggered.");
+          Go.updateLED(LED::WHITE);
+          break;
+        case 1:
+          Serial.println("Endstop 1 is triggered.");
+          Go.updateLED(LED::GREEN);
+          break;
+        case 2:
+          Serial.println("Endstop 2 is triggered.");
+          Go.updateLED(LED::CYAN);
+          break;
+        case 3:
+          Serial.println("Both Endstops are triggered.");
+          Go.updateLED(LED::RED);
+          break;
       }
+      lastStatus = status;
     }
-    else if(es.read() == 1){
-      Serial.println("Endstop 1 is triggered.");
-      if(UseLED){
-        button.updateLED(LED::GREEN);
-      }
-    }
-    else if(es.read() == 2){
-      Serial.println("Endstop 2 is triggered.");
-      if(UseLED){
-        button.updateLED(LED::BLUE);
-      }
-    }
-    else if(es.read() == 3){
-      Serial.println("Both Endstops are triggered.");
-      if(UseLED){
-        button.updateLED(LED::YELLOW);
-      }
+
+    if(Go.read() == true){
+      break;
     }
   }
+
   return;
 }
 
-void TestHall(Sensor::HallSwitch hall, Sensor::Button button, bool UseLED){
+void TestHall(Sensor::HallSwitch hall){
+  //Testing the Hall-Sensor. The Hall-Sensor will be checked for its status and the LED will change color accordingly.
+  //The LED will change color after each step (Untriggered = white, Triggered = magenta)
+  //Pressing the Go-Button will end the test.
+
   Serial.println("Testing Hall-Sensor:");
+  bool status = false;
+  bool lastStatus = false;
+
   while(true){
-    if(hall.read() == false){
-      Serial.println("Hall-Sensor is not triggered.");
-      if(UseLED){
-        button.updateLED(LED::RED);
+    status = hall.read();
+    if(status != lastStatus){
+      if(status == true){
+        Serial.println("Hall-Sensor is triggered.");
+        Go.updateLED(LED::MAGENTA);
       }
+      else{
+        Serial.println("Hall-Sensor is not triggered.");
+        Go.updateLED(LED::WHITE);
+      }
+      lastStatus = status;
     }
-    else if(hall.read() == true){
-      Serial.println("Hall-Sensor is triggered.");
-      if(UseLED){
-        button.updateLED(LED::GREEN);
-      }
+
+    if(Go.read() == true){
+      break;
     }
   }
+
   return;
 }
 
-void TestButton(Sensor::Button button, bool UseLED){
+void TestButton(){
+  //Testing the Button. The Button will be checked for its status and the LED will change color accordingly.
+  //The LED will change color after each step (Button not pressed = white, Button pressed = random color)
+  //Holding the Go-Button for 5 seconds will end the test.
   Serial.println("Testing Button:");
   randomSeed(analogRead(A5));
+  bool status = false;
+  bool lastStatus = false;
+  unsigned long buttonPressTime = 0;
   while(true){
-    if(button.read() == false){
-      Serial.println("Button is not pressed.");
-      if(UseLED){
-        button.updateLED(LED::OFF);
+    status = Go.read();
+    if(status != lastStatus){
+      if(status == true){
+        Serial.println("Button is pressed.");
+        Go.updateLED(random(1, 8));
+        //Start the timer if the button is pressed
+        buttonPressTime = millis();
       }
+      else{
+        Serial.println("Button is not pressed.");
+        Go.updateLED(LED::WHITE);
+      }
+      lastStatus = status;
     }
-    else if(button.read() == true){
-      Serial.println("Button is pressed.");
-      if(UseLED){
-        button.updateLED(random(1,8));
-      }
+    //End the test if the button is pressed for 5 seconds
+    if(status == true && millis() - buttonPressTime >= 5000){
+      break;
     }
   }
   return;
 }
+
 } // namespace testComp
 
+
+//TODO: Continue here
+
 namespace testFunc {
+
+void IdentifyES(){
+  Serial.println("Identifying Endstops.");
+
+  uint8_t es_1 = 0;
+  uint8_t es_2 = 0;
+  while(1){
+  if(es_1 != WGes.read()){
+    es_1 = WGes.read();
+    switch(es_1){
+      case 0:
+        Serial.println("Weight: Untriggered");
+        break;
+      case 2:
+        Serial.println("Weight: Bottom");
+        break;
+      case 1:
+        Serial.println("Weight: Top");
+        break;
+    }
+    delay(100);
+  }
+  if(es_2 != SLes.read()){
+    es_2 = SLes.read();
+    switch(es_2){
+      case 0:
+        Serial.println("Slider: Untriggered");
+        break;
+      case 1:
+        Serial.println("Slider: Left");
+        break;
+      case 2:
+        Serial.println("Slider: Right");
+        break;
+    }
+    delay(100);
+  }
+  }
+}
 
 void WeightAndHammer(){
 
@@ -238,27 +281,6 @@ void WeightAndHammer(){
   serv::hammergo();
   return;
 
-}
-
-void SliderTiming(){
-  Go.updateLED(LED::GREEN);
-  Go.waitForPress();
-  if(SLes.read() != Slider::RIGHT){
-    Go.updateLED(LED::YELLOW);
-    SLdc.run(-255);
-    while(SLes.read() != Slider::RIGHT){
-      delay(1);
-    }
-    SLdc.brake();
-    delay(1000);
-  }
-  Go.updateLED(LED::CYAN);
-  Serial.println(SL::SPEED);
-  SLdc.run(SL::SPEED);
-  while(SLes.read() != Slider::LEFT){
-    delay(1);
-  SLdc.brake();
-} 
 }
 
 void Slider(){
