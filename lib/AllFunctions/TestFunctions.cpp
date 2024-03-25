@@ -240,25 +240,67 @@ void WeightAndHammer(){
 
 }
 
-void Slider(){
+void SliderTiming(){
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
   if(SLes.read() != Slider::RIGHT){
-    SLdc.run(-SL::RS_SPEED);
+    Go.updateLED(LED::YELLOW);
+    SLdc.run(-255);
     while(SLes.read() != Slider::RIGHT){
       delay(1);
     }
     SLdc.brake();
     delay(1000);
   }
+  Go.updateLED(LED::CYAN);
+  Serial.println(SL::SPEED);
   SLdc.run(SL::SPEED);
   while(SLes.read() != Slider::LEFT){
     delay(1);
-  }
   SLdc.brake();
-  delay(1000);
-  SLdc.run(-SL::RS_SPEED);
-  while(SLes.read() != Slider::RIGHT){
+} 
+}
+
+void Slider(){
+  Go.updateLED(LED::GREEN);
+  Serial.println("Press Button to Start Slider-Test");
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  if(SLes.read() != Slider::RIGHT){
+    SLdc.run(-SL::RS_SPEED);
+    while(SLes.read() != Slider::RIGHT){
+      if(Go.read() == true){
+        SLdc.brake();
+        return;
+      }
+      delay(1);
+    }
+    Go.updateLED(LED::GREEN);
+    SLdc.brake();
+    delay(1000);
+    Go.updateLED(LED::YELLOW);
+  }
+  SLdc.run(SL::RS_SPEED);
+  while(SLes.read() != Slider::LEFT){
+    if(Go.read() == true){
+        SLdc.brake();
+        return;
+      }
     delay(1);
   }
+  Go.updateLED(LED::GREEN);
+  SLdc.brake();
+  delay(1000);
+  Go.updateLED(LED::YELLOW);
+  SLdc.run(-SL::RS_SPEED);
+  while(SLes.read() != Slider::RIGHT){
+    if(Go.read() == true){
+        SLdc.brake();
+        return;
+      }
+    delay(1);
+  }
+  Go.updateLED(LED::GREEN);
   SLdc.brake();
   return;
 }
@@ -277,6 +319,105 @@ void Sign(uint16_t delayTime){
  step::move(-STP::POS);
   delay(2*delayTime);
   return;
+}
+
+
+void Machine(){
+  constexpr uint16_t delayTime = 500;
+  //Testing the whole machine for functionality after repairs or replacements
+  Serial.println("Testing Machine");
+  Serial.println("Press Button to start");
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  //1. Test Endstops Weight (Press Button then wait for Endstop Top, then Endstop Bottom)
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  Serial.println("Endstop Weight Top");
+  while(WGes.read() != Weight::TOP){
+    delay(1);
+  }
+  Go.updateLED(LED::GREEN);
+  delay(1000);
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  Serial.println("Endstop Weight Bottom");
+  while(WGes.read() != Weight::BOTTOM){
+    delay(1);
+  }
+  Go.updateLED(LED::GREEN);
+  delay(1000);
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  //2. Test Endstops Slider (Press Button then wait for Endstop Left, then Endstop Right, Press Button again to skip this process)
+  Slider();
+  delay(delayTime);
+  Go.updateLED(LED::GREEN);
+  //3. Test Hall-Sensor Hammerwheel (Press Button, then spin the wheel manually. IF the light changes to purple, the hall-sensor is sensing a magnet)
+  Serial.println("Hall-Sensor Hammerwheel");
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  while(Go.read() != true){
+    if(HWha.read() == true){
+      Go.updateLED(LED::MAGENTA);
+    }
+    else{
+      Go.updateLED(LED::YELLOW);
+    }
+    delay(1);
+  }
+  Go.updateLED(LED::GREEN);
+  //4. Test Hall-Sensor Sign (Press Button, then move the sign manually. IF the light changes to purple, the hall-sensor is sensing a magnet)
+  Serial.println("Hall-Sensor Sign");
+  digitalWrite(pin::STP_SLP, LOW);
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  while(Go.read() != true){
+    if(SGha.read() == true){
+      Go.updateLED(LED::MAGENTA);
+    }
+    else{
+      Go.updateLED(LED::YELLOW);
+    }
+    delay(1);
+  }
+  Go.updateLED(LED::GREEN);
+  //5. Test Servo Hammerstop (Press Button, then the hammerstop moves to the off Position, press again to move in the on Position)
+  Serial.println("Servo Hammerstop");
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  HSsv.runToPos(HS::OFF);
+  delay(1000);
+  Go.updateLED(LED::GREEN);
+  while(Go.read() != true){
+    delay(1);
+  }
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  HSsv.runToPos(HS::ON);
+  delay(1000);
+  Go.updateLED(LED::GREEN);
+  //6. Test Servo Coupling (Press Button, then the sign moves to the off Position, press again to move in the on Position)
+  Serial.println("Servo Coupling");
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  COsv.runToPos(SERVO::OFF);
+  delay(1000);
+  Go.updateLED(LED::GREEN);
+  Go.waitForPress();
+  Go.updateLED(LED::YELLOW);
+  delay(delayTime);
+  COsv.runToPos(SERVO::ON);
+  delay(1000);
+  Go.updateLED(LED::GREEN);
+
+
+
+
+
 }
 
 } // namespace testFunc

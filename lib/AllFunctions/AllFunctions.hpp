@@ -129,8 +129,10 @@ namespace testFunc {
 
 //*Funktionsgruppen
 void WeightAndHammer();
+void SliderTiming();
 void Slider();
 void Sign(uint16_t delayTime = 1000);
+void Machine();
 
 } // namespace testFunc
 

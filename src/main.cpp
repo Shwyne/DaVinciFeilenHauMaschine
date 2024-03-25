@@ -29,7 +29,7 @@ void inline EndstopsRun();
 void inline EndstopsReset();
 void inline resetting();
 
-void inline errorLoop();
+void errorLoop();
 
 void setup() { 
 
@@ -41,12 +41,9 @@ void setup() {
 
   //*EEPROM Error-Checking:
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
-  /*if(hasErrorEEPROM() && ERROR_MANAGEMENT){
+  if(hasErrorEEPROM() && ERROR_MANAGEMENT){
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
-    //printError();
-    errorLoop();
-  }*/
-  if(hasErrorEEPROM()){
+    printError();
     errorLoop();
   }
 
@@ -69,21 +66,23 @@ void setup() {
   COsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
-  //initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
+  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
+  digitalWrite(pin::FAN, HIGH);
 }
 
 void loop() {
-  Serial.println(Go.read());
-  /*if(Go.read() == true){
-    Serial.println("GO PRESSED");
-    if(Go.read() == false){
-      Serial.println("GO RELEASED");
-      errorLoop();
-    }
-  }*/
- 
+ // testFunc::SliderTiming();
+ Go.updateLED(LED::GREEN);
+ Go.waitForPress();
+ Go.updateLED(LED::CYAN);
+ SLdc.run(SL::SPEED);
+ while(SLes.read() != Slider::LEFT){
+   delay(1);
+ }
+ SLdc.brake();
+
   //dloop();
 }
 
@@ -112,18 +111,7 @@ void inline dloop() {
 
 void inline idling(){
   if(SGst.currentPosition() != 0 && STP::ENABLED == true){
-    Serial.println("Homing");
-    digitalWrite(pin::STP_SLP, HIGH);
-    int homing = -1;
-    while(SGha.read() == LOW){
-      SGst.moveTo(homing);
-      homing--;
-      SGst.run();
-      //delayMicroseconds(500);   //TODO: Check if this is okay to comment out.
-    }
-    Serial.println("Homed");
-    SGst.setCurrentPosition(0);
-    digitalWrite(pin::STP_SLP, LOW);
+    step::home();
     check();
   }
   Go.updateLED(LED::GREEN);
@@ -324,22 +312,11 @@ void initStateOfMachine(){
   check();
   serv::couple();
   check();
-  Serial.println("Homing");
-    int homing = -1;
-    while(SGha.read() == LOW){
-      SGst.moveTo(homing);
-      homing--;
-      SGst.run();
-      delay(1);
-    }
-    Serial.println("Homed");
-    SGst.setCurrentPosition(0);
-    check();
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
 }
 
-void inline errorLoop(){
+void errorLoop(){
   Go.updateLED(LED::RED);
   EEPROM.write(0, 1);
   ctime = millis();
@@ -362,6 +339,8 @@ void inline errorLoop(){
         Go.updateLED(LED::WHITE);
         if(digitalRead(pin::CLEAR_ERROR) == LOW){
           EEPROM.write(0, 0);
+          EEPROM.write(1, 0);
+          erCode = ErrCode::NO_ERROR;
           delay(1000);
           Go.updateLED(LED::OFF);
           return;

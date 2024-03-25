@@ -215,6 +215,13 @@ void home(){
     homing--;
     SGst.run();
     delayMicroseconds(500);
+    if(STP::MICRO_STEPS * STP::SPR * 2 < abs(homing)){
+      erCode = ErrCode::SG_TIMEOUT;
+      if(ERROR_MANAGEMENT){
+        digitalWrite(pin::STP_SLP, LOW);
+        return;
+      }
+    }
   }
   Serial.println("Homed");
   SGst.setCurrentPosition(0);
