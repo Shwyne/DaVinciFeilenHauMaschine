@@ -123,46 +123,6 @@ void hammergo() {
 
 } // namespace serv
 
-
-void IdentifyES(){
-  Serial.println("Identifying Endstops.");
-
-  uint8_t es_1 = 0;
-  uint8_t es_2 = 0;
-  while(1){
-  if(es_1 != WGes.read()){
-    es_1 = WGes.read();
-    switch(es_1){
-      case 0:
-        Serial.println("Weight: Untriggered");
-        break;
-      case 2:
-        Serial.println("Weight: Bottom");
-        break;
-      case 1:
-        Serial.println("Weight: Top");
-        break;
-    }
-    delay(100);
-  }
-  if(es_2 != SLes.read()){
-    es_2 = SLes.read();
-    switch(es_2){
-      case 0:
-        Serial.println("Slider: Untriggered");
-        break;
-      case 1:
-        Serial.println("Slider: Left");
-        break;
-      case 2:
-        Serial.println("Slider: Right");
-        break;
-    }
-    delay(100);
-  }
-  }
-}
-
 namespace step{
 
 void setMicroSteps(uint8_t microSteps){
@@ -295,15 +255,6 @@ void printError() {
     break;
   case ErrCode::SL_TIMEOUT: 
     Serial.println("TIMEOUT: Slider");
-    break;
-  case ErrCode::STPDRV_NOT_CONNECTED:
-    Serial.println("CONNECTION-ERROR: Stepper-Driver");
-    break;
-  case ErrCode::WG_OVERCURRENT:
-    Serial.println("OVERCURRENT: Weight");
-    break;
-  case ErrCode::SL_OVERCURRENT: 
-    Serial.println("OVERCURRENT: Slider");
     break;
   case ErrCode::COUP_NOT_ATTACHED: 
     Serial.println("CONNECTION-ERROR: Coupling");
