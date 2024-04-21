@@ -20,25 +20,52 @@ extern Sensor::HallSwitch HWha;     //Hammerwheel Hall-Switch
 extern Sensor::HallSwitch SGha;     //Slider Hall-Switch
 extern Sensor::Button Go;           //Go-Button
 
-//*Error-Codes:
+//------------------------------------------------------------
 
-enum class ErrCode : uint8_t {
-    NO_ERROR = 0,       //No Error
-    HW_TIMEOUT = 1,     //Hammerwheel Timeout
-    SG_TIMEOUT = 2,     //Slider Timeout
-    WG_TIMEOUT = 3,     //Weight Timeout
-    SL_TIMEOUT = 4,     //Slider Timeout
-    COUP_NOT_ATTACHED = 5,  //Coupling not attached
-    COUP_NOT_IN_POS = 6,    //Coupling not in position
-    HS_NOT_ATTACHED = 7,    //Hammerstop not attached
-    HS_NOT_IN_POS = 8,      //Hammerstop not in position
-    UNDEFINED = 255,        //Undefined Error
+//*Error-Handling:
+
+enum class CompStatus : uint8_t {
+    NOT_CONNECTED = 0,  //Cant connect to device
+    SUCCESS = 1,    //Success
+    TIMEOUT = 2,    //Timeout
+    ERROR = 3,      //Other Errors
+    UNDEFINED = 255,    //Undefined
 };
 
+enum class FuncGroup : uint8_t {
+    HW = 0,     //Hammerwheel - DC-Motor, Hall HW
+    SL = 1,     //Slider - DC-Motor, Hall SG
+    CO = 2,     //Coupling - Servo
+    HS = 3,     //Hammerstop - Servo
+    WG = 4,     //Weight - Endstops
+    SG = 5,     //Sign - Stepper, Hall SG
+    UNDEFINED = 255,    //Undefined - used for prototyping and testing
+};
 
-//* Global Variables -> Defined in main.cpp:
-extern ErrCode erCode;   //Error-Code
-extern uint32_t ctime;  //Current Time
+class StatusClass {
+    private:
+        CompStatus status;
+        FuncGroup group;
+    public:
+        StatusClass(CompStatus status, FuncGroup group){
+            this->status = CompStatus::UNDEFINED;
+            this->group = FuncGroup::UNDEFINED;
+        }
+        //get the function group:
+        FuncGroup getComps(){
+            return this->group;
+        }
+        //get the status:
+        CompStatus getStatus(){
+            return this->status;
+        }
+};
+
+//*-------------------- Math -----------------------
+
+//Calculates the logarithm to the base 2
+uint8_t log2(uint8_t n);
+
 
 //*--------------------Enumerator-----------------------
 
@@ -98,26 +125,28 @@ namespace LED{
 
 //Servo Functions
 namespace serv {
-    void decouple();    //Decouples the coupling
-    void couple();      //Couples the coupling
-    void hammerstop();  //Stops the hammerwheel by engaging the hammerstop in the right position
-    void hammergo();    //Releases the hammerstop
+    StatusClass decouple();    //Decouples the coupling
+    StatusClass couple();      //Couples the coupling
+    StatusClass hammerstop();  //Stops the hammerwheel by engaging the hammerstop in the right position
+    StatusClass hammergo();    //Releases the hammerstop
+    CompStatus waitForTarget(ServoExp srv, uint16_t timeout);    //Waits for the servo to reach its target
 }
 
 //Stepper Functions
 namespace step {
     void setMicroSteps(uint8_t microSteps); //Sets the microsteps for the stepper (1-32);
-    void home();                            //Homes the stepper (Hall-Sensor and Magnet -> Pos1)
+    StatusClass home();                            //Homes the stepper (Hall-Sensor and Magnet -> Pos1)
     void move(int steps);                   //Moves the stepper a specific amount of steps
 }
 
 //Error Functions
-void check();           //Checks the hardware for errors
+void ErrorState(StatusClass status);    //Handles the Error-States
 void showErrorLED();    //Shows the error on the Go-Button LED and catches the Program in a while loop till the error is cleared
 void printError();      //Prints the error to the Serial Monitor
 
 //EEPROM Functions
-void writeToEEPROM();   //Writes the Error-Code to the EEPROM
+void writeToEEPROM(StatusClass status);   //Writes the Error-Code to the EEPROM
+StatusClass readFromEEPROM();             //Reads the Error-Code from the EEPROM
 bool hasErrorEEPROM();  //Checks if an Error is stored in the EEPROM
 void clearEEPROM();     //Clears the Error-Code from the EEPROM
 
@@ -145,21 +174,3 @@ void Sign(uint16_t delayTime = 1000);   //Test the Sign
 void Machine();                         //Test the whole Machine
 
 } // namespace testFunc
-
-namespace measure {
-void SliderTiming();    //Measures the Slider-Timing
-void MagnetsHR(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns = 3, uint8_t speed = 255);    //Measures the Hammerwheel-Timing
-void TestWeight(MP6550 HWdc, Sensor::Endstops WGes, Sensor::HallSwitch HWhall, bool infinite = true);   //Measures the Weight-Timing
-
-} // namespace measure
-
-//--------------------ExporFunctios.cpp--------------------
-
-namespace exportData{
-
-void MagnetTimings(MP6550 mdc, Sensor::HallSwitch hall, uint8_t turns, uint8_t speed = 255);    //Measures the Hammerwheel-Timing and can export them to e.g. excel using serial
-void WeightCountMagnets(MP6550 mdc, Sensor::HallSwitch hall, Sensor::Endstops es, uint8_t speed = 255);   //Counts the magnets of the weight and can export them to e.g. excel using serial
-void ServoPositions(ServoExp servo, uint8_t angle1, uint8_t angle2, uint16_t iteration = 10, uint16_t delayTime = 500);   //Measures the Servo-Positions and can export them to e.g. excel using serial
-void SliderTiming(MP6550 mdc, Sensor::Endstops es, uint8_t speed = 255, uint8_t iterations = 10);   
-
-} // namespace export

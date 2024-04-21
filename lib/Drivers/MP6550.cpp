@@ -5,7 +5,7 @@
 * This library is for the MP6550 H-Bridge Motor Driver
 * It is used to control the speed and direction of a motor using two PWM signals and a sleep pin
 * Contains functions to run the motor, brake the motor, coast the motor, and put the driver to sleep
-* Created by: Timo Steinhilber, 2023
+* Created by: Shwyne, 2023
 
 * The MP6550 is a dual H-Bridge motor driver with two PWM inputs and a sleep pin
 * SLP pin has to be pulled HIGH (5V) if not controlled by a microcontroller

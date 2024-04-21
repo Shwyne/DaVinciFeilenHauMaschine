@@ -4,74 +4,111 @@
 
 namespace serv {
 
-void decouple() {
+//*Decouple the coupling [HW <-> SL]
+
+StatusClass decouple() {
+
   if(DEBUG>1) Serial.println("DECOUPLE: Starts");
-  COsv.run(COUP::DIS);
-  ctime = millis();
-  while(COsv.reachedTarget() == false){
-    if(millis() - ctime > COUP::TIMEOUT){
-      erCode = ErrCode::COUP_NOT_IN_POS;
-      if(ERROR_MANAGEMENT) return;
+
+  uint8_t tries = 0;
+  while(COsv.attached() == false){
+    COsv.attach();
+    tries++;
+    if(tries > COUP::ATTACH_TRIES){
+      if(DEBUG>1) Serial.println("DECOUPLE: Not attached");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::CO);
     }
-    delay(1);
+    delay(100); 
+  }
+
+  
+  COsv.run(COUP::DIS);
+  auto waitResult = waitForTarget(COsv, COUP::TIMEOUT);
+  if(waitResult == CompStatus::TIMEOUT){
+    if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
+    if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::CO);
   }
   if(DEBUG>1) Serial.println("DECOUPLE: Done");
-  return;
+  return StatusClass(CompStatus::SUCCESS, FuncGroup::CO);
+  
 }
 
-void couple() {
+//*Couple the coupling [HW <-> SL]
+
+StatusClass couple() {
+
   if(DEBUG>1) Serial.println("COUPLE: Starts");
-  COsv.run(COUP::EN);
-  ctime = millis();
-  while(COsv.reachedTarget() == false){
-    if(millis() - ctime > COUP::TIMEOUT){
-      erCode = ErrCode::COUP_NOT_IN_POS;
-      if(ERROR_MANAGEMENT) return;
+  
+  uint8_t tries = 0;
+  while(COsv.attached() == false){
+    COsv.attach();
+    tries++;
+    if(tries > COUP::ATTACH_TRIES){
+      if(DEBUG>1) Serial.println("DECOUPLE: Not attached");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::CO);
     }
-    delay(1);
+    delay(100); 
+  }
+
+  COsv.run(COUP::EN);
+
+  auto waitResult = waitForTarget(COsv, COUP::TIMEOUT);
+  if(waitResult == CompStatus::TIMEOUT){
+    if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
+    if(ERROR_MANAGEMENT) if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::CO);
   }
   if(DEBUG>1) Serial.println("COUPLE: Done");
-  return;
+  return StatusClass(CompStatus::SUCCESS, FuncGroup::CO);
 }
 
-void hammerstop() {
+
+//*Engage the hammerstop
+
+StatusClass hammerstop() {
   //Debug Message
   if(DEBUG>1) Serial.println("HAMMERSTOP: Starts");
-  //If Servo not attached -> attach
-  if(HSsv.attached() == false){
+
+  //If Servo not attached -> try to attach (up to 3 times)
+  uint8_t tries = 0;
+  while(HSsv.attached() == false){
     HSsv.attach();
+    tries++;
+    if(tries > HS::ATTACH_TRIES){
+      if(DEBUG>1) Serial.println("HAMMERSTOP: Not attached");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::HS);
+    }
+    delay(100);
   }
+
   //Check if Servo is not in Off Position
   if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
     //If Servo not in Off (+ Tolerance) try to run to Off
     HSsv.run(HS::OFF);
     delay(400);
     //Check if that worked
-    if(HSsv.reachedTarget() == false){
-      //If not, error code -> Error Management
-      erCode = ErrCode::HS_NOT_IN_POS;
-      if(ERROR_MANAGEMENT) return;
+    auto waitResult = waitForTarget(HSsv, HS::TIMEOUT);
+    if(waitResult != CompStatus::SUCCESS){
+      if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
     }
   }
   //Start Motor to find engage position
   HWdc.run(HW::SPEED);
   //Set timer for Timeout Error Management
-  ctime = millis();
+  uint32_t ctime = millis();
   //Wait till Hall-Sensor detects Magnet
   while(HWha.read() == true){
     delay(1);
     if(millis() - ctime > HW::TIMEOUT){
       //TimeOut Error-Handling -> millis() - ctime = deltaT
-      erCode = ErrCode::HW_TIMEOUT;
-      if(ERROR_MANAGEMENT) return;
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
     }
   }
   //Wait till magnet isnt detected anymore
   while(HWha.read() != true){
     delay(1);
     if(millis() - ctime > HW::TIMEOUT){
-      erCode = ErrCode::HW_TIMEOUT;
-      if(ERROR_MANAGEMENT) return;
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
     }
   }
   //Delay to match position perfectly
@@ -80,93 +117,84 @@ void hammerstop() {
   delay(100);
   //Motor in postion -> engage hammerstop
   HSsv.run(HS::ON);
-  //Reset timer for Timeout Error Management
-  ctime = millis();
-  //Wait for Servo to reach Target (+ Tolerance)
-  while(HSsv.reachedTarget() == false){
-    delay(1);
-    if(millis() - ctime > HS::TIMEOUT){
-      //If delta T > Timeout -> Error
-      erCode = ErrCode::HS_NOT_IN_POS;
-      if(ERROR_MANAGEMENT) return;
+  auto waitResult = waitForTarget(HSsv, HS::TIMEOUT);
+  if(waitResult == CompStatus::TIMEOUT){
+      if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
     }
-  }
   if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
   //delay to make sure the next action starts properly
   delay(300);
-  return;
+  return StatusClass(CompStatus::SUCCESS, FuncGroup::HS);
 }
 
-void hammergo() {
-  if(DEBUG>1) Serial.println("HAMMERGO: Starts");
-  if(HSsv.attached() == false){
-    HSsv.attach();
-  }
-  using namespace HS;
-  HSsv.run(OFF);
-  ctime = millis();
-  while(HSsv.reachedTarget() == false){
-    if(millis() - ctime > HS::TIMEOUT){
-      erCode = ErrCode::HS_NOT_IN_POS;
-      if(ERROR_MANAGEMENT) return;
-    }
-    delay(1);
+//*Disengage the hammerstop
 
+StatusClass hammergo() {
+  if(DEBUG>1) Serial.println("HAMMERGO: Starts");
+  //If Servo not attached -> try to attach (up to 3 times)
+  uint8_t tries = 0;
+  while(HSsv.attached() == false){
+    HSsv.attach();
+    tries++;
+    if(tries > HS::ATTACH_TRIES){
+      if(DEBUG>1) Serial.println("HAMMERSTOP: Not attached");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::HS);
+    }
+    delay(100);
+  }
+
+  HSsv.run(HS::OFF);
+
+  auto waitResult = waitForTarget(HSsv, HS::TOLERANCE);
+  if(waitResult == CompStatus::TIMEOUT){
+      if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
+      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
   }
   delay(100);
   HWdc.run(HW::SPEED);
-  delay(50);
+  delay(150);
   HWdc.brake();
   if(DEBUG>1) Serial.println("HAMMERGO: Done");
-  return;
+  return StatusClass(CompStatus::SUCCESS, FuncGroup::HS);
 }
 
-} // namespace serv
 
+//*Wait for the Servo to reach its target
+
+CompStatus waitForTarget(ServoExp srv, uint16_t timeout){
+  uint32_t timer = millis();
+  while(srv.reachedTarget() == false){
+    delay(1);
+    if(millis() - timer > timeout){
+      return CompStatus::TIMEOUT;
+    }
+  }
+  return CompStatus::SUCCESS;
+}
+
+} //? namespace serv
+
+
+//------------------------------------------------
 namespace step{
 
 void setMicroSteps(uint8_t microSteps){
-  switch(microSteps){
-    case 1:
-      digitalWrite(pin::STP_M0, LOW);
-      digitalWrite(pin::STP_M1, LOW);
-      digitalWrite(pin::STP_M2, LOW);
-      break;
-    case 2:
-      digitalWrite(pin::STP_M0, HIGH);
-      digitalWrite(pin::STP_M1, LOW);
-      digitalWrite(pin::STP_M2, LOW);
-      break;
-    case 4:
-      digitalWrite(pin::STP_M0, LOW);
-      digitalWrite(pin::STP_M1, HIGH);
-      digitalWrite(pin::STP_M2, LOW);
-      break;
-    case 8:
-      digitalWrite(pin::STP_M0, HIGH);
-      digitalWrite(pin::STP_M1, HIGH);
-      digitalWrite(pin::STP_M2, LOW);
-      break;
-    case 16:
-      digitalWrite(pin::STP_M0, LOW);
-      digitalWrite(pin::STP_M1, LOW);
-      digitalWrite(pin::STP_M2, HIGH);
-      break;
-    case 32:
-      digitalWrite(pin::STP_M0, HIGH);
-      digitalWrite(pin::STP_M1, HIGH);
-      digitalWrite(pin::STP_M2, HIGH);
-      break;
-    default:
-      digitalWrite(pin::STP_M0, LOW);
-      digitalWrite(pin::STP_M1, LOW);
-      digitalWrite(pin::STP_M2, LOW);
-      break;
-    }
-  return;
+  // Calculate the logarithm base 2 of microSteps, rounding down
+  uint8_t log2MicroSteps = (microSteps > 0) ? log2(microSteps) : 0;
+
+  // Calculate the values for M0, M1, and M2
+  bool M0 = log2MicroSteps & 1;
+  bool M1 = log2MicroSteps & 2;
+  bool M2 = log2MicroSteps & 4;
+
+  // Write the values to the pins
+  digitalWrite(pin::STP_M0, M0);
+  digitalWrite(pin::STP_M1, M1);
+  digitalWrite(pin::STP_M2, M2);
 }
 
-void home(){
+StatusClass home(){
   digitalWrite(pin::STP_SLP, HIGH);
   Serial.println("Homing");
   int homing = -1;
@@ -176,17 +204,16 @@ void home(){
     SGst.run();
     delayMicroseconds(500);
     if(STP::MICRO_STEPS * STP::SPR * 2 < abs(homing)){
-      erCode = ErrCode::SG_TIMEOUT;
       if(ERROR_MANAGEMENT){
         digitalWrite(pin::STP_SLP, LOW);
-        return;
+        return StatusClass(CompStatus::TIMEOUT, FuncGroup::SG);
       }
     }
   }
   Serial.println("Homed");
   SGst.setCurrentPosition(0);
   digitalWrite(pin::STP_SLP, LOW);
-  return;
+  return StatusClass(CompStatus::SUCCESS, FuncGroup::SG);
 }
 
 void move(int steps){
@@ -199,89 +226,100 @@ void move(int steps){
 
 } // namespace step
 
-void check(){
-  if(ERROR_MANAGEMENT == false){
+void ErrorState(StatusClass status){
+  auto FuncGroup = status.getComps();
+  auto CompStatus = status.getStatus();
+
+  if(CompStatus == CompStatus::SUCCESS){
+    if(DEBUG>0) Serial.println("No Error.");
     return;
   }
-  if(erCode != ErrCode::NO_ERROR){
+  //Disable Drivers, stop Motors
+  else{
     HWdc.brake();
     SLdc.brake();
-    writeToEEPROM();
-    printError();
-    showErrorLED();
+    HWdc.sleep();
+    SLdc.sleep();
+    digitalWrite(pin::STP_EN, LOW);
   }
-  return;
+
+  const char* compStatusStrings[] = {
+    "NOT_CONNECTED: ",
+    "SUCCESS: ",
+    "TIMEOUT: ",
+    "ERROR: ",
+    "UNDEFINED: "
+  };
+
+  const char* funcGroupStrings[] = {
+    "Hammerwheel",
+    "Slider",
+    "Coupling",
+    "Hammerstop",
+    "Weight",
+    "Sign",
+    "Undefined"
+  };
+
+  Serial.println(compStatusStrings[static_cast<int>(CompStatus)]);
+  Serial.println(funcGroupStrings[static_cast<int>(FuncGroup)]);
+  
+  writeToEEPROM(status);  
+  showErrorLED(); //Endless Loop
 }
 
 void showErrorLED(){
-  ctime = millis();
-  LED::color lastColor = LED::OFF;
+  uint32_t ctime = millis();
+  uint32_t rtime = 0;
+  LED::color LEDColor = LED::RED;
   while(1){
     if(millis() - ctime > ERROR_LED_DELAY){
-      if(lastColor == LED::OFF){
-        Go.updateLED(LED::RED);
-        lastColor = LED::RED;
-      }
-      else{
-        Go.updateLED(LED::OFF);
-        lastColor = LED::OFF;
-      }
+      Go.updateLED(LEDColor);
+      LEDColor = (LEDColor == LED::RED) ? LED::OFF : LED::RED;
       ctime = millis();
     }
     if(digitalRead(pin::CLEAR_ERROR) == LOW){
       Go.updateLED(LED::MAGENTA);
-      clearEEPROM();
-      erCode = ErrCode::NO_ERROR;
-      delay(2000);
-      Go.updateLED(LED::OFF);
-      return;
+      rtime = millis();
+      while(digitalRead(pin::CLEAR_ERROR) == LOW){
+        if(millis() - rtime > CLEAR_ERROR_TIME){
+          clearEEPROM();
+          if(DEBUG>0) Serial.println("EEPROM cleared");
+          Go.updateLED(LED::OFF);
+          return;
+        }
+      }
     }
   }
 }
 
-void printError() {
-  switch (erCode) {
-  case ErrCode::NO_ERROR: 
-    Serial.println("No Error."); 
-    break;
-  case ErrCode::HW_TIMEOUT: 
-    Serial.println("TIMEOUT: Hammerwheel"); 
-    break;
-  case ErrCode::SG_TIMEOUT: 
-    Serial.println("TIMEOUT: Sign"); 
-    break;
-  case ErrCode::WG_TIMEOUT: 
-    Serial.println("TIMEOUT: Weight"); 
-    break;
-  case ErrCode::SL_TIMEOUT: 
-    Serial.println("TIMEOUT: Slider");
-    break;
-  case ErrCode::COUP_NOT_ATTACHED: 
-    Serial.println("CONNECTION-ERROR: Coupling");
-    break;
-  case ErrCode::COUP_NOT_IN_POS: 
-    Serial.println("POSITION-ERROR: Coupling");
-    break;
-  case ErrCode::HS_NOT_ATTACHED: 
-    Serial.println("CONNECTION-ERROR: Hammerstop");
-    break;
-  case ErrCode::HS_NOT_IN_POS: 
-    Serial.println("POSITION-ERROR: Hammerstop");
-    break;
-  case ErrCode::UNDEFINED: Serial.println("UNDEFINED ERROR."); 
-    break;
-  }
-}
-
-void writeToEEPROM(){
+void writeToEEPROM(StatusClass status){
   if(EEPROM_ENABLED == false){
     return;
   }
   else{
     EEPROM.write(EEPROM_ADDRESS, true);
-    EEPROM.write(EEPROM_ADDRESS+1, static_cast<uint8_t>(erCode));
+    EEPROM.write(EEPROM_ADDRESS+1, static_cast<uint8_t>(status.getStatus()));
+    EEPROM.write(EEPROM_ADDRESS+2, static_cast<uint8_t>(status.getComps()));
   }
   return;
+}
+
+StatusClass readFromEEPROM(){
+  if(EEPROM_ENABLED == false){
+    return StatusClass(CompStatus::SUCCESS, FuncGroup::UNDEFINED);
+  }
+  else{
+    bool hasError = EEPROM.read(EEPROM_ADDRESS);
+    if(hasError == true){
+      uint8_t status = EEPROM.read(EEPROM_ADDRESS+1);
+      uint8_t group = EEPROM.read(EEPROM_ADDRESS+2);
+      return StatusClass(static_cast<CompStatus>(status), static_cast<FuncGroup>(group));
+    }
+    else{
+      return StatusClass(CompStatus::SUCCESS, FuncGroup::UNDEFINED);
+    }
+  }
 }
 
 bool hasErrorEEPROM(){
@@ -290,9 +328,7 @@ bool hasErrorEEPROM(){
   }
   else{
     bool hasError = EEPROM.read(EEPROM_ADDRESS);
-    uint8_t ErrorCode = EEPROM.read(EEPROM_ADDRESS+1);
     if(hasError == true){
-      erCode = static_cast<ErrCode>(ErrorCode);
       return true;
     }
     else{
@@ -306,8 +342,17 @@ void clearEEPROM(){
     return;
   }
   else{
-    EEPROM.write(EEPROM_ADDRESS, false);
+    EEPROM.write(EEPROM_ADDRESS, 0);
     EEPROM.write(EEPROM_ADDRESS+1, 0);
+    EEPROM.write(EEPROM_ADDRESS+2, 0);
   }
   return;
+}
+
+uint8_t log2(uint8_t n){
+  uint8_t result = 0;
+  while(n >>= 1){
+    result++;
+  }
+  return result;
 }

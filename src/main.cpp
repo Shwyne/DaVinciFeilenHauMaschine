@@ -12,11 +12,12 @@ Sensor::HallSwitch HWha(pin::HR_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Hammerw
 Sensor::HallSwitch SGha(pin::SG_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Sign (Hallpin, TriggerState)
 Sensor::Button Go(pin::GO_BUT,pin::GO_LED_R,pin::GO_LED_G,pin::GO_LED_B); // Go-Button (Pin, TriggerState)
 
-ErrCode erCode = ErrCode::NO_ERROR;
 uint32_t ctime = 0;
 uint32_t stime = 0; //Slider Timer, counts only, if Slider is moving and resets with full reset
 uint32_t hwtime = 0; //Hammerwheel Timer, counts only, if Hammerwheel is moving
 uint32_t wtime = 0; //Weight Timer for resetting manners
+
+StatusClass MachineStatus = StatusClass(CompStatus::SUCCESS, FuncGroup::UNDEFINED);
 
 bool fullReset = true;
 
@@ -26,10 +27,9 @@ void inline dloop();
 void inline idling();
 void inline running();
 void inline EndstopsRun();
-void inline EndstopsReset();
+void inline FullReset();
+void inline WeightReset();
 void inline resetting();
-
-void errorLoop();
 
 void setup() { 
 
@@ -43,11 +43,11 @@ void setup() {
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);
   if(hasErrorEEPROM() && ERROR_MANAGEMENT){
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
-    printError();
-    errorLoop();
+    MachineStatus = readFromEEPROM();
+    ErrorState(MachineStatus);
   }
 
-  pinMode(pin::FAN, OUTPUT); //Initializes the fan (if available)
+  if(FAN) pinMode(pin::FAN, OUTPUT); //Initializes the fan, if enabled (config)
 
   //* Sign-Stepper Setup:
   SGst.setMaxSpeed(5000.0);
@@ -69,7 +69,7 @@ void setup() {
   initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
-  digitalWrite(pin::FAN, HIGH);
+  if(FAN) digitalWrite(pin::FAN, LOW);  
 }
 
 void loop() {
@@ -110,12 +110,17 @@ void inline dloop() {
 //*IDLE: Waiting for Go-Signal
 
 void inline idling(){
-  if(SGst.currentPosition() != 0 && STP::ENABLED == true){
-    step::home();
-    check();
+  //*1. Sign to Pos 1:
+  if(SGst.currentPosition() != 0 && STP::ENABLED == true){  //If the sign is not at the home position and the stepper is enabled (config)
+    MachineStatus = step::home();                           //Homes the stepper and returns the status -> Sign Pos 1 (Hall-Sensor, Magnet)
+    if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){   //If the status is not successful
+      ErrorState(MachineStatus);                          //Error-Handling                
+    }
   }
-  Go.updateLED(LED::GREEN);
-  while(Go.read() != true){
+  //*2 Button LED to green:
+  Go.updateLED(LED::GREEN);                              //Updates the LED to green, showing the visitor the machine is ready
+  //*3. Waiting for User Input:
+  while(Go.read() != true){                             //Waiting for someone to press the button
     delay(1);
   }
 }
@@ -123,90 +128,98 @@ void inline idling(){
 //*RUN: Running the machine
 
 void inline running(){
-  digitalWrite(pin::FAN, HIGH); //Turns on the fan (if available)
-  Go.updateLED(LED::CYAN);
-  if(STP::ENABLED == true){
-    digitalWrite(pin::STP_SLP, HIGH);
-    SGst.moveTo(STP::POS);
-    SGst.runToPosition();
-    digitalWrite(pin::STP_SLP, LOW);
-    check();
-  }
-  HWdc.run(HW::SPEED);
-  SLdc.run(SL::SPEED);
+  //*1. (optional) start the fan
+  if(FAN) digitalWrite(pin::FAN, HIGH); //Turns on the fan if enabled (config)
+  //*2. Button LED to cyan:
+  Go.updateLED(LED::CYAN);        //Updates the LED to cyan, showing the visitor the machine is running
+  //*3. Stepper to Pos 2:
+  if(STP::ENABLED) SGst.move(STP::POS); //Moves the stepper to the position (config) -> Sign pos 2
+  //*4. Running the Motors:
+  HWdc.run(HW::SPEED);             //Runs the Hammerwheel with the given speed (config)
+  SLdc.run(SL::SPEED);            //Runs the Slider with the given speed (config)
 }
+
+
+//*Function for running till an endstop is triggered
 
 void inline EndstopsRun(){
   if(DEBUG>1) Serial.println("RUN: Endstops waiting...");
+  //*1. Setting the timers to the current time
   ctime = millis();
   hwtime = millis();
   bool detectedMagnet = false;
+  //*2. Waiting for ONE endstop to be triggered
   while(WGes.read() != Weight::BOTTOM && SLes.read() != Slider::LEFT){
     if(HWha.read() == HIGH && detectedMagnet == false){
-      detectedMagnet = true;
-       hwtime = millis();
+        detectedMagnet = true;
+        hwtime = millis();
       }
       else if(HWha.read() == LOW && detectedMagnet == true){
         detectedMagnet = false;
       }
-      if((millis() - hwtime) > HW::TIMEOUT){
-        erCode = ErrCode::HW_TIMEOUT;
-        check();
+      if(ERROR_MANAGEMENT && (millis() - hwtime) >= HW::TIMEOUT){
+        MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
+        ErrorState(MachineStatus);
       }
-      if((millis() - wtime + stime) > SL::TIMEOUT){
-        erCode = ErrCode::SL_TIMEOUT;
-        check();
+      if(ERROR_MANAGEMENT && (millis() - wtime + stime) > SL::TIMEOUT){
+        MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::SL);
+        ErrorState(MachineStatus);
       }
   }
+  
   if(DEBUG>1) Serial.print("RUN: Hit Endstops, starting ");
-  if(SLes.read() == Slider::LEFT){
-    fullReset = true;
-    Serial.println("full reset.");
-  }
-  else{
-    fullReset = false;
-    Serial.println("weight reset.");
-  }
+  //*3. Calculating timers for reset 
+  wtime = millis() - ctime;   //Weight Timer for resetting purposes
+  stime += wtime; //Slider timer gets reset after Full reset
+  //*4. Braking the motors
   HWdc.brake();
   SLdc.brake();
 }
 
 void inline FullReset(){
+
   if(DEBUG > 1) Serial.println("RESET: Endstops waiting...");
   bool ReachedWeightTarget = false;
   bool ReachedSliderTarget = false;
+  //*1. Setting the timer to the current time
   ctime = millis();
+  //*2. Waiting for BOTH endstops to be triggered
   while((ReachedWeightTarget == false) || (ReachedSliderTarget == false)){
     if(WGes.read() == Weight::TOP && ReachedWeightTarget == false){
       if(DEBUG>1) Serial.print("Weight reached TOP");
       ReachedWeightTarget = true;
-      HWdc.brake();
+      HWdc.brake();   //Reaching Weight top brakes the HW-Motor
     }
     if(SLes.read() == Slider::RIGHT && ReachedSliderTarget == false){
       if(DEBUG>1) Serial.print("Slider reached RIGHT");
       ReachedSliderTarget = true;
-      SLdc.brake();
+      SLdc.brake();   //Reaching Slider right brakes the SL-Motor
     }
-    if(wtime != 0 && (millis() - ctime) > wtime){
-      erCode = ErrCode::WG_TIMEOUT;
-      check();
+    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > wtime){
+      MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
+      ErrorState(MachineStatus);
     }
-    if(stime != 0 && (millis() - ctime) > stime){
-      erCode = ErrCode::SL_TIMEOUT;
-      check();
+    if(ERROR_MANAGEMENT && stime != 0 && (millis() - ctime) > stime){
+      MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::SL);
+      ErrorState(MachineStatus);
     }
   }
+  //*3. Resetting the slider-timer
+  stime = 0;
 }
 
 void inline WeightReset(){
   if(DEBUG > 1) Serial.println("RESET: Endstops waiting...");
+  //*1. Setting the timer to the current time
   ctime = millis();
+  //*2. Waiting for the Weight-Endstop to be triggered
   while(WGes.read() != Weight::TOP){
-    if(wtime != 0 && (millis() - ctime) > wtime){
-      erCode = ErrCode::WG_TIMEOUT;
-      check();
+    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > wtime){
+      MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
+      ErrorState(MachineStatus);
     }
   }
+  //*3. Braking the motor
   HWdc.brake();
 }
 
@@ -215,24 +228,27 @@ void inline WeightReset(){
 
 void inline resetting(){
 
+  //*1. update the LED to yellow
   Go.updateLED(LED::YELLOW);
 
-  if(STP::ENABLED == true){
-    digitalWrite(pin::STP_SLP, HIGH);
-    SGst.moveTo(2*STP::POS);
-    SGst.runToPosition();
-    digitalWrite(pin::STP_SLP, LOW);
-    check();
-  }
+  //*2. Stepper to Pos 3:
+  if(STP::ENABLED) SGst.move(STP::POS); //Moves the stepper to the next position (config) -> Sign pos 3
 
   if(DEBUG>0) Serial.println(fullReset ? "RESET: Full Reset" : "RESET: Weight Reset");
-  serv::decouple();
-  check();
-  serv::hammerstop();
-  check();
+
+  //*3. Decoupling the Slider and Hammer shafts
+  MachineStatus = serv::decouple();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
+  //*4. Blocking the Hammerwheel
+  MachineStatus = serv::hammerstop();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
 
   if(DEBUG>0) Serial.println("RESET: Motors reversed, waiting for endstops.");
-  
+  //*5. Running either both or just the weight motor back (depending on the condition of the Slider Endstops)
   if(SLes.read() == Slider::LEFT){
     SLdc.run(-SL::RS_SPEED);
     HWdc.run(-HW::RS_SPEED);
@@ -244,17 +260,25 @@ void inline resetting(){
   } 
 
   if(DEBUG>0) Serial.println("RESET: Endstops reached.");
-  serv::hammergo();
-  check();
-  serv::couple();
-  check();
+  //*6. Releasing the Hammerwheel
+  MachineStatus = serv::hammergo();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
+  //*7. Coupling the Slider and Hammer shafts
+  MachineStatus = serv::couple();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
   delay(1000);
-  digitalWrite(pin::FAN, LOW); //Turns off the fan (if available)
+  //*8. Disabling the fan
+  if(FAN) digitalWrite(pin::FAN, LOW); //Turns off the fan (if available)
 }
 
 //*Init: Initialize the System
 
 void initStateOfMachine(){
+
   Go.updateLED(LED::WHITE);
   if(DEBUG>0){
     Serial.println("Press Go-Button to initialize the machine.");
@@ -263,10 +287,14 @@ void initStateOfMachine(){
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
   if(SLes.read() != Slider::RIGHT || WGes.read() != Weight::TOP){
-    serv::decouple();
-    check();
-    serv::hammerstop();
-    check();
+    MachineStatus = serv::decouple();
+    if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+      ErrorState(MachineStatus);
+    }
+    MachineStatus = serv::hammerstop();
+    if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+      ErrorState(MachineStatus);
+    }
   }
   switch(SLes.read()){
     case 0:
@@ -308,44 +336,17 @@ void initStateOfMachine(){
  HWdc.run(-HW::RS_SPEED);
  FullReset();
   
-  serv::hammergo();
-  check();
-  serv::couple();
-  check();
+  MachineStatus = serv::hammergo();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
+
+  MachineStatus = serv::couple();
+  if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
+    ErrorState(MachineStatus);
+  }
+
   if(DEBUG>0) Serial.println("Done | INIT: End");
   return;
-}
-
-void errorLoop(){
-  Go.updateLED(LED::RED);
-  EEPROM.write(0, 1);
-  ctime = millis();
-  bool off = false;
-   while(true){
-      if(millis() - ctime > 1000){
-        if(off){
-          Go.updateLED(LED::RED);
-          off = false;
-        }
-        else{
-          Go.updateLED(LED::OFF);
-          off = true;
-        }
-        ctime = millis();
-      }
-      if(digitalRead(pin::CLEAR_ERROR) == LOW){
-        Go.updateLED(LED::MAGENTA);
-        delay(2000);
-        Go.updateLED(LED::WHITE);
-        if(digitalRead(pin::CLEAR_ERROR) == LOW){
-          EEPROM.write(0, 0);
-          EEPROM.write(1, 0);
-          erCode = ErrCode::NO_ERROR;
-          delay(1000);
-          Go.updateLED(LED::OFF);
-          return;
-        }
-      }
-    }
 }
  
