@@ -12,7 +12,7 @@ Sensor::HallSwitch HWha(pin::HR_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Hammerw
 Sensor::HallSwitch SGha(pin::SG_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Sign (Hallpin, TriggerState)
 Sensor::Button Go(pin::GO_BUT,pin::GO_LED_R,pin::GO_LED_G,pin::GO_LED_B); // Go-Button (Pin, TriggerState)
 
-uint32_t ctime = 0;
+uint32_t ctime = 0; //Current Time, used for general and temporal Timeout-Calculations
 uint32_t stime = 0; //Slider Timer, counts only, if Slider is moving and resets with full reset
 uint32_t hwtime = 0; //Hammerwheel Timer, counts only, if Hammerwheel is moving
 uint32_t wtime = 0; //Weight Timer for resetting manners
@@ -23,7 +23,6 @@ bool fullReset = true;
 
 void initStateOfMachine();
 
-void inline dloop();
 void inline idling();
 void inline running();
 void inline EndstopsRun();
@@ -47,6 +46,7 @@ void setup() {
     ErrorState(MachineStatus);
   }
 
+  //*Fan-Setup:
   if(FAN) pinMode(pin::FAN, OUTPUT); //Initializes the fan, if enabled (config)
 
   //* Sign-Stepper Setup:
@@ -66,6 +66,7 @@ void setup() {
   COsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
+  //* INIT:
   initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
@@ -73,37 +74,23 @@ void setup() {
 }
 
 void loop() {
- // testFunc::SliderTiming();
- Go.updateLED(LED::GREEN);
- Go.waitForPress();
- Go.updateLED(LED::CYAN);
- SLdc.run(SL::SPEED);
- while(SLes.read() != Slider::LEFT){
-   delay(1);
- }
- SLdc.brake();
 
-  //dloop();
-}
-
-void inline dloop() {
-
+  //* IDLE:
   if(DEBUG>0) Serial.println("IDLE: Waiting for Go-Signal.");
   idling();
   if(DEBUG>0) Serial.println("IDLE: Go-Signal received.");
 
+  //* RUN:
   running();
   if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
-
   EndstopsRun();
-
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
-  
+
+  //* RESET:
   resetting();
   if(DEBUG>0) Serial.println("RESET: Done");
   if(DEBUG>1) Serial.println("-------------------------------");
 }
-
 
 //--------------------Functions--------------------
 
@@ -195,11 +182,11 @@ void inline FullReset(){
       ReachedSliderTarget = true;
       SLdc.brake();   //Reaching Slider right brakes the SL-Motor
     }
-    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > wtime){
+    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > (wtime * HW::RS_TO_FACTOR)){
       MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
       ErrorState(MachineStatus);
     }
-    if(ERROR_MANAGEMENT && stime != 0 && (millis() - ctime) > stime){
+    if(ERROR_MANAGEMENT && stime != 0 && (millis() - ctime) > (stime * SL::RS_TO_FACTOR)){
       MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::SL);
       ErrorState(MachineStatus);
     }
@@ -214,7 +201,7 @@ void inline WeightReset(){
   ctime = millis();
   //*2. Waiting for the Weight-Endstop to be triggered
   while(WGes.read() != Weight::TOP){
-    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > wtime){
+    if(ERROR_MANAGEMENT && wtime != 0 && (millis() - ctime) > (wtime * HW::RS_TO_FACTOR)){
       MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
       ErrorState(MachineStatus);
     }
@@ -279,68 +266,39 @@ void inline resetting(){
 
 void initStateOfMachine(){
 
+  //*1. Update the LED to white
   Go.updateLED(LED::WHITE);
+  //*2. (Optional) Wait for the Go-Button to be pressed (debugging purposes)
   if(DEBUG>0){
     Serial.println("Press Go-Button to initialize the machine.");
     Go.waitForPress();
   }
+  //*3. Update the LED to yellow
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
+  //*4. Checking Position (Slider, Weight), if not in Start position
   if(SLes.read() != Slider::RIGHT || WGes.read() != Weight::TOP){
     MachineStatus = serv::decouple();
+    //*4a Decoupling the Slider and Hammer shafts
     if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
       ErrorState(MachineStatus);
     }
+    //*4b Blocking the Hammerwheel
     MachineStatus = serv::hammerstop();
     if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
       ErrorState(MachineStatus);
     }
+    //*4c Running the motors back to the start position
+    SLdc.run(-SL::RS_SPEED);
+    HWdc.run(-HW::RS_SPEED);
+    FullReset();
   }
-  switch(SLes.read()){
-    case 0:
-      Serial.print("Slider -> Untriggered");
-      break;
-    case 1:
-      Serial.print("Slider -> Right");
-      break;
-    case 2:
-      Serial.print("Slider -> Left");
-      break;
-    case 3:
-      Serial.print("Slider -> Both");
-      break;
-    default:
-      Serial.print("Slider -> Error");
-      break;
- }
- if(WGes.read()){
-    switch(WGes.read()){
-      case 0:
-        Serial.print("Weight -> Untriggered");
-        break;
-      case 1:
-        Serial.print("Weight -> Top");
-        break;
-      case 2:
-        Serial.print("Weight -> Bottom");
-        break;
-      case 3:
-        Serial.print("Weight -> Both");
-        break;
-      default:
-        Serial.print("Weight -> Error");
-        break;
-    }
- }
- SLdc.run(-SL::RS_SPEED);
- HWdc.run(-HW::RS_SPEED);
- FullReset();
-  
+  //*5. Releasing the Hammerwheel
   MachineStatus = serv::hammergo();
   if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
     ErrorState(MachineStatus);
   }
-
+  //*6. Coupling the Slider and Hammer shafts
   MachineStatus = serv::couple();
   if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS){
     ErrorState(MachineStatus);
