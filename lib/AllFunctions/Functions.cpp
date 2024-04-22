@@ -145,7 +145,6 @@ StatusClass hammergo() {
   }
 
   HSsv.run(HS::OFF);
-
   auto waitResult = waitForTarget(HSsv, HS::TOLERANCE);
   if(waitResult == CompStatus::TIMEOUT){
       if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
@@ -164,13 +163,16 @@ StatusClass hammergo() {
 
 CompStatus waitForTarget(ServoExp srv, uint16_t timeout){
   uint32_t timer = millis();
-  while(srv.reachedTarget() == false){
+  srv.attach();
+  while(1){
     delay(1);
-    if(millis() - timer > timeout){
+    if(srv.reachedTarget()){
+      return CompStatus::SUCCESS;
+    }
+    if((millis() - timer > timeout) && ERROR_MANAGEMENT){
       return CompStatus::TIMEOUT;
     }
   }
-  return CompStatus::SUCCESS;
 }
 
 } //? namespace serv

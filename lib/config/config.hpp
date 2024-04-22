@@ -30,7 +30,7 @@ constexpr int BAUTRATE = 9600;
 //---------------------------------------------------------------------------------------------
 //*Debugging and Error-Management:
 //0 = off, 1 = basic info, 2 = detailed info
-constexpr uint8_t DEBUG = 1;
+constexpr uint8_t DEBUG = 2;
 //If Error-Management is enabled, an error will lead to the error state
 //If not enabled, error will be ignored   
 constexpr bool ERROR_MANAGEMENT = 0;

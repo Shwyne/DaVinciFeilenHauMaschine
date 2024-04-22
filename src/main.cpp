@@ -65,13 +65,26 @@ void setup() {
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
   //* INIT:
-  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
+  //initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
   if(FAN) digitalWrite(pin::FAN, LOW);  
 }
 
-void loop() {
+void loop(){
+  Go.updateLED(LED::RED);
+  serv::hammerstop();
+  delay(1000);
+ // HWdc.run(-200);
+  delay(1000);
+  HWdc.brake();
+  delay(1000);
+  Go.updateLED(LED::GREEN);
+  serv::hammergo();
+  delay(1000);
+}
+
+void inline dloop() {
 
   //* IDLE:
   if(DEBUG>0) Serial.println("IDLE: Waiting for Go-Signal.");

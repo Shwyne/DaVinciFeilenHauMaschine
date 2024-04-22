@@ -76,6 +76,7 @@ void MP6550::run(int speed) { //Input: Speed (-255 to 255)
   if ((this->speed > 0 && !reversed) || (this->speed < 0 && reversed)) {
     analogWrite(IN1pin, abs(this->speed));
     digitalWrite(IN2pin, LOW);
+    Serial.println("IN1 - PWM | IN2 - LOW");
   } 
   
   //if speed is negative and not reversed or speed is positive and reversed
@@ -161,5 +162,5 @@ bool MP6550::isSleeping() {
   // If SLPpin is not used, return false;
   if(SLPpin == 255) return false;
   // Return true if SLPpin is HIGH, false if LOW  
-  return digitalRead(SLPpin) == HIGH;  
+  return digitalRead(SLPpin) == LOW;  
 }
