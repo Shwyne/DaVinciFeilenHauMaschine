@@ -65,39 +65,29 @@ void setup() {
   HSsv.runToPos(SERVO::OFF);              // Runs the servo to the position OFF
 
   //* INIT:
-  //initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
+  initStateOfMachine();   // Initializes the machine and resets to the initial state if necessary
   
   if(DEBUG>0) Serial.println("Setup done.");
   if(FAN) digitalWrite(pin::FAN, LOW);  
 }
 
-void loop(){
-  Go.updateLED(LED::RED);
-  serv::hammerstop();
-  delay(1000);
- // HWdc.run(-200);
-  delay(1000);
-  HWdc.brake();
-  delay(1000);
-  Go.updateLED(LED::GREEN);
-  serv::hammergo();
-  delay(1000);
-}
-
-void inline dloop() {
+void loop() {
 
   //* IDLE:
   if(DEBUG>0) Serial.println("IDLE: Waiting for Go-Signal.");
+  step::home();
   idling();
   if(DEBUG>0) Serial.println("IDLE: Go-Signal received.");
 
   //* RUN:
+  step::move(STP::POS);
   running();
   if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
   WaitForEndstops();
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
 
   //* RESET:
+  step::move(STP::POS);
   resetting();
   if(DEBUG>0) Serial.println("RESET: Done");
   if(DEBUG>1) Serial.println("-------------------------------");
@@ -131,7 +121,7 @@ void inline running(){
   //*2. Button LED to cyan:
   Go.updateLED(LED::CYAN);        //Updates the LED to cyan, showing the visitor the machine is running
   //*3. Stepper to Pos 2:
-  if(STP::ENABLED) SGst.move(STP::POS); //Moves the stepper to the position (config) -> Sign pos 2
+  if(STP::ENABLED) step::move(STP::POS); //Moves the stepper to the position (config) -> Sign pos 2
   //*4. Running the Motors:
   HWdc.run(HW::SPEED);             //Runs the Hammerwheel with the given speed (config)
   SLdc.run(SL::SPEED);            //Runs the Slider with the given speed (config)
@@ -230,7 +220,7 @@ void inline resetting(){
   Go.updateLED(LED::YELLOW);
 
   //*2. Stepper to Pos 3:
-  if(STP::ENABLED) SGst.move(STP::POS); //Moves the stepper to the next position (config) -> Sign pos 3
+  if(STP::ENABLED) step::move(2*STP::POS); //Moves the stepper to the next position (config) -> Sign pos 3
 
   //*3. Decoupling the Slider and Hammer shafts
   MachineStatus = serv::decouple();

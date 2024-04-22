@@ -69,7 +69,7 @@ StatusClass hammerstop() {
   if(DEBUG>1) Serial.println("HAMMERSTOP: Starts");
 
   //If Servo not attached -> try to attach (up to 3 times)
-  uint8_t tries = 0;
+  /*uint8_t tries = 0;
   while(HSsv.attached() == false){
     HSsv.attach();
     tries++;
@@ -78,10 +78,10 @@ StatusClass hammerstop() {
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::HS);
     }
     delay(100);
-  }
+  }*/
 
   //Check if Servo is not in Off Position
-  if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
+  /*if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
     //If Servo not in Off (+ Tolerance) try to run to Off
     HSsv.run(HS::OFF);
     delay(400);
@@ -91,25 +91,25 @@ StatusClass hammerstop() {
       if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
     }
-  }
+  }*/
   //Start Motor to find engage position
   HWdc.run(HW::SPEED);
   //Set timer for Timeout Error Management
-  uint32_t ctime = millis();
+  //uint32_t ctime = millis();
   //Wait till Hall-Sensor detects Magnet
   while(HWha.read() == true){
     delay(1);
-    if(millis() - ctime > HW::TIMEOUT){
+    /*if(millis() - ctime > HW::TIMEOUT){
       //TimeOut Error-Handling -> millis() - ctime = deltaT
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
-    }
+    }*/
   }
   //Wait till magnet isnt detected anymore
   while(HWha.read() != true){
     delay(1);
-    if(millis() - ctime > HW::TIMEOUT){
+    /*if(millis() - ctime > HW::TIMEOUT){
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
-    }
+    }*/
   }
   //Delay to match position perfectly
   delay(450); //TODO: Calculate value based on RPM of Hammerwheel motor
@@ -117,12 +117,12 @@ StatusClass hammerstop() {
   delay(100);
   //Motor in postion -> engage hammerstop
   HSsv.run(HS::ON);
-  auto waitResult = waitForTarget(HSsv, HS::TIMEOUT);
+  /*auto waitResult = waitForTarget(HSsv, HS::TIMEOUT);
   if(waitResult == CompStatus::TIMEOUT){
       if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
     }
-  if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
+  if(DEBUG>1) Serial.println("HAMMERSTOP: Done");*/
   //delay to make sure the next action starts properly
   delay(300);
   return StatusClass(CompStatus::SUCCESS, FuncGroup::HS);
@@ -133,7 +133,7 @@ StatusClass hammerstop() {
 StatusClass hammergo() {
   if(DEBUG>1) Serial.println("HAMMERGO: Starts");
   //If Servo not attached -> try to attach (up to 3 times)
-  uint8_t tries = 0;
+  /*uint8_t tries = 0;
   while(HSsv.attached() == false){
     HSsv.attach();
     tries++;
@@ -142,14 +142,14 @@ StatusClass hammergo() {
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::HS);
     }
     delay(100);
-  }
+  }*/
 
   HSsv.run(HS::OFF);
-  auto waitResult = waitForTarget(HSsv, HS::TOLERANCE);
+  /*auto waitResult = waitForTarget(HSsv, HS::TOLERANCE);
   if(waitResult == CompStatus::TIMEOUT){
       if(DEBUG>1) Serial.println("DECOUPLE: Not in Pos");
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HS);
-  }
+  }*/
   delay(100);
   HWdc.run(HW::SPEED);
   delay(150);
