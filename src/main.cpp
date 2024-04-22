@@ -19,13 +19,11 @@ uint32_t wtime = 0; //Weight Timer for resetting manners
 
 StatusClass MachineStatus = StatusClass(CompStatus::SUCCESS, FuncGroup::UNDEFINED);
 
-bool fullReset = true;
-
 void initStateOfMachine();
 
 void inline idling();
 void inline running();
-void inline EndstopsRun();
+void inline WaitForEndstops();
 void inline FullReset();
 void inline WeightReset();
 void inline resetting();
@@ -83,7 +81,7 @@ void loop() {
   //* RUN:
   running();
   if(DEBUG>0) Serial.println("RUN: Motors started, waiting for endstops.");
-  EndstopsRun();
+  WaitForEndstops();
   if(DEBUG>0) Serial.println("RUN: Endstops reached");
 
   //* RESET:
@@ -129,7 +127,7 @@ void inline running(){
 
 //*Function for running till an endstop is triggered
 
-void inline EndstopsRun(){
+void inline WaitForEndstops(){
   if(DEBUG>1) Serial.println("RUN: Endstops waiting...");
   //*1. Setting the timers to the current time
   ctime = millis();
@@ -220,8 +218,6 @@ void inline resetting(){
 
   //*2. Stepper to Pos 3:
   if(STP::ENABLED) SGst.move(STP::POS); //Moves the stepper to the next position (config) -> Sign pos 3
-
-  if(DEBUG>0) Serial.println(fullReset ? "RESET: Full Reset" : "RESET: Weight Reset");
 
   //*3. Decoupling the Slider and Hammer shafts
   MachineStatus = serv::decouple();
