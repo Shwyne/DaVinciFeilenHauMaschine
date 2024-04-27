@@ -67,18 +67,7 @@ StatusClass couple() {
 StatusClass hammerstop() {
   //Debug Message
   if(DEBUG>1) Serial.println("HAMMERSTOP: Starts");
-
-  //If Servo not attached -> try to attach (up to 3 times)
-  /*uint8_t tries = 0;
-  while(HSsv.attached() == false){
-    HSsv.attach();
-    tries++;
-    if(tries > HS::ATTACH_TRIES){
-      if(DEBUG>1) Serial.println("HAMMERSTOP: Not attached");
-      if(ERROR_MANAGEMENT) return StatusClass(CompStatus::NOT_CONNECTED, FuncGroup::HS);
-    }
-    delay(100);
-  }*/
+  HSsv.attach();
 
   //Check if Servo is not in Off Position
   /*if(abs(HSsv.read() - HS::OFF) > HS::TOLERANCE){
@@ -162,8 +151,8 @@ StatusClass hammergo() {
 //*Wait for the Servo to reach its target
 
 CompStatus waitForTarget(ServoExp srv, uint16_t timeout){
+  //srv.attach();       //TODO: Check if that troubles
   uint32_t timer = millis();
-  srv.attach();
   while(1){
     delay(1);
     if(srv.reachedTarget()){
