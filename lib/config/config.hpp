@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include "pins.hpp"
+#include "Enumerator.hpp"
 
 
 
@@ -33,10 +34,10 @@ constexpr int BAUTRATE = 9600;
 constexpr uint8_t DEBUG = 2;
 //If Error-Management is enabled, an error will lead to the error state
 //If not enabled, error will be ignored   
-constexpr bool ERROR_MANAGEMENT = 0;
+constexpr bool ERROR_MANAGEMENT = 1;
 //If EEPROM is enabled, the error-flag will be stored in the EEPROM
 //This allows for the error to be handled, even after the device loses power 
-constexpr bool EEPROM_ENABLED = 0;
+constexpr bool EEPROM_ENABLED = 1;
 //Adress where the error-flag is stored (Atmega328P has 1024 Bytes of EEPROM)       
 constexpr uint16_t EEPROM_ADDRESS = 0;
 //Blinking Interval of the Error-LED in ms  
@@ -61,6 +62,10 @@ constexpr int RS_SPEED = 255;
 constexpr float i = 0.5;
 //Number of Magnets on the Hammerwheel
 constexpr uint8_t nMAGNETS = 6;
+//Height of the weight lifted in mm
+constexpr uint16_t HEIGHT_mm = 700;
+//Radius of the Weightspool in mm
+constexpr uint16_t RADIUS_mm = 40;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -116,10 +121,6 @@ namespace HS {
 constexpr uint8_t OFF = 0;
 //Defines the angle of the "On" position in degrees (°)
 constexpr uint8_t ON = 80;
-//Tolerance of the Servo in degrees (°)
-//If e.g. the Tolerance is 10 
-    //then the off poisition is reached, if servo-angle <= (OFF +- TOLERANCE)
-constexpr uint8_t TOLERANCE = 5;
 //Minimum angle of the Servo in degrees (°) (Datasheet)
 //Default: 0°
 constexpr uint8_t MIN = 0;
@@ -129,8 +130,7 @@ constexpr uint8_t MAX = 180;
 //Time per degree in ms (Datasheet or estimations/measurements)
 //Used for error-management and timeout-calculations
 constexpr float TPD = 0.14;
-//Tries to Attach the Servo again, if it is not attached
-constexpr uint8_t ATTACH_TRIES = 3;
+
 }
 
 //---------------------------------------------------------------------------------------------
@@ -140,8 +140,6 @@ namespace COUP {
 constexpr uint8_t DIS = 0;
 //Defines the angle of the "Engaged" position in degrees (°)
 constexpr uint8_t EN = 110;
-//Tolerance of the Servo in degrees (°)
-constexpr uint8_t TOLERANCE = 3;
 //Minimum angle of the Servo in degrees (°) (Datasheet)
 constexpr uint8_t MIN = 0;
 //Maximum angle of the Servo in degrees (°) (Datasheet)
@@ -149,8 +147,6 @@ constexpr uint8_t MAX = 180;
 //Time per degree in ms (Datasheet or estimations/measurements)
 //Used for error-management and timeout-calculations
 constexpr float TPD = 0.14;
-//Tries to Attach the Servo again, if it is not attached
-constexpr uint8_t ATTACH_TRIES = 3;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -182,6 +178,9 @@ constexpr float RPM = (SPEED / 255.0) * RPM_MAX * i;        //RPM
 //Calculation of the timeout used to detect an error if either the motor doesnt move or the hall-sensor is not triggered
 // 1 min/ (RPM * nMagnets) -> 60000ms / (RPM * nMagnets):
 constexpr uint32_t TIMEOUT = (RPM>0 && nMAGNETS>0) ? 60000/(RPM*nMAGNETS) * 2: 0;
+//Calculation if the hammerwheel isnt spinning (while resetting to the starting position)
+//(Height * 60000)/(RPM * 2 * PI * Radius)
+constexpr uint32_t wtime_calc = (RPM>0 && HEIGHT_mm>0 && RADIUS_mm>0) ? (HEIGHT_mm * 60000)/(RPM * 2 * PI * RADIUS_mm) * 1.5 : 0;
 //Factor speed/rs_speed -> Used for Timeout-Calculations while resetting the motor
 constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 }
@@ -199,6 +198,7 @@ constexpr float time_min = (RPM>0 && PITCH>0) ? L_mm/(RPM*PITCH) : 0;
 //Calculates the timeout in ms
 //If the slider didnt reach its destination in time, an error will be triggered
 constexpr uint32_t TIMEOUT = time_min * 60000 * 1.2;
+constexpr uint32_t stime_calc = TIMEOUT;
 //Factor speed/rs_speed -> Used for Timeout-Calculations while resetting the motor
 constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 }
@@ -214,7 +214,7 @@ namespace HS{
 //Calculates the timeout in ms
 // timeout (ms) = abs(Max_Angle - Min_Angle) * Time_Per_Degree * 2 (for safety reasons)
 //e.g. abs(180-0) * 0.14 * 2 = 50.4
-constexpr uint16_t TIMEOUT = abs(MAX - MIN) * TPD * 2;
+constexpr uint16_t BLOCKTIME = abs(MAX - MIN) * TPD * 2;
 }
 
 //*Calculations Servo Coupling:
@@ -222,5 +222,5 @@ namespace COUP{
 //Calculates the timeout in ms
 // timeout (ms) = abs(Max_Angle - Min_Angle) * Time_Per_Degree * 2 (for safety reasons)
 //e.g. abs(180-0) * 0.14 * 2 = 50.4
-constexpr uint16_t TIMEOUT = abs(MAX - MIN) * TPD * 2;
+constexpr uint16_t BLOCKTIME = abs(MAX - MIN) * TPD * 2;
 }

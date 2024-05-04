@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 
 //*----------------------- MP6550 -----------------------*//
@@ -40,26 +41,22 @@ class ServoExp : public Servo {
 private:
   uint8_t MIN;    //Minimum Angle possible for the Servo
   uint8_t MAX;    //Maximum Angle possible for the Servo
-  uint8_t posTarg;    //Target Position for the Servo
-  uint8_t tolerance;  //Tolerance for the Servo -> bool reachedTarget()
   uint8_t pin;      //Pin for the Servo-PWM (typ. Orange Wire)
   uint8_t pos1;     //Position 1 for the Servo
   uint8_t pos2;     //Position 2 for the Servo
+  uint32_t blockingTime;  //Blocking Time for the Servo in ms
 
 public:
   //Constructor: pin, min, max, tolerance are optional
-  ServoExp(uint8_t pin, uint8_t min = 0, uint8_t max = 180, uint8_t tolerance = 0);
+  ServoExp(uint8_t pin, uint8_t min = 0, uint8_t max = 180, uint32_t blockingTime = 500);
   
   void attach();  //Attach the Servo (Needed for the Servo-Library to work properly)
 
   void setPositions(uint8_t pos1 = 255, uint8_t pos2 = 255);  //Set the Positions for the Servo (pos1 = OFF, pos2 = ON)
-  void setTolerance(uint8_t tolerance); //Set the Tolerance for the Servo -> bool reachedTarget()
 
   void write(uint8_t angle);  //Write a specific angle to the Servo
   void run(uint8_t angle);    //Run the Servo to a specific angle (Does same as write, just a different name)
   void runToPos(uint8_t pos); //Run the Servo to a specific position (pos1 = OFF, pos2 = ON) -> blocks until reachedTarget()
-  
-  bool reachedTarget();  //Check if the Servo reached the Target Position -> returns true if reached, false if not
   
   ~ServoExp();  //Destructor: Detach the Servo
 };
