@@ -476,7 +476,7 @@ StatusClass hammergo() {
   if(DEBUG>1) Serial.println("HAMMERGO: Starts");
   HSsv.run(HS::OFF);
   HWdc.run(HW::SPEED);
-  delay(5000/HW::RPM); //TODO: Calculate value based on RPM of Hammerwheel motor
+  delay(5000/HW::RPM);
   HWdc.brake();
   if(DEBUG>1) Serial.println("HAMMERGO: Done");
   return StatusClass(CompStatus::SUCCESS, FuncGroup::HW);
