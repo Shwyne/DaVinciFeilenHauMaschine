@@ -112,6 +112,8 @@ constexpr float i = 1.2;
 constexpr uint8_t RPM = 10;
 //Angle till the next surface of the sign in degrees (°)
 constexpr uint16_t ANGLE = 120;
+//Timeout
+constexpr uint32_t TIMEOUT = 5000;
 }
 
 //---------------------------------------------------------------------------------------------
