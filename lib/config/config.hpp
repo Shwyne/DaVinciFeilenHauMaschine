@@ -31,7 +31,7 @@ constexpr int BAUTRATE = 9600;
 //---------------------------------------------------------------------------------------------
 //*Debugging and Error-Management:
 //0 = off, 1 = basic info, 2 = detailed info
-constexpr uint8_t DEBUG = 2;
+constexpr uint8_t DEBUG = 0;
 //If Error-Management is enabled, an error will lead to the error state
 //If not enabled, error will be ignored   
 constexpr bool ERROR_MANAGEMENT = 1;
@@ -63,9 +63,9 @@ constexpr float i = 0.5;
 //Number of Magnets on the Hammerwheel
 constexpr uint8_t nMAGNETS = 6;
 //Height of the weight lifted in mm
-constexpr uint16_t HEIGHT_mm = 700;
+constexpr uint16_t HEIGHT_mm = 750;
 //Radius of the Weightspool in mm
-constexpr uint16_t RADIUS_mm = 40;
+constexpr uint16_t RADIUS_mm = 50;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -84,7 +84,8 @@ constexpr bool AUTO_SLEEP = 1;
 //Synchronizes the Slider with the Hammerwheel
 constexpr bool SYNCHRONIZED = 1;
 //Transmission Factor inbetween the Slider and the Hammerwheel
-constexpr float SYNC_FAC = 0.5;
+//0.5 would be correct, but the motor is not strong enough to move the slider.
+constexpr float SYNC_FAC = 0.5 * 2;
 //Speed of the Motor (0-255) -> 0 = 0%, 64 = 25%, 128 = 50%, 192 = 75%, 255 = 100%
 //Used only, if synchronized = 0
 constexpr uint8_t speed_ = 180;     
@@ -113,7 +114,7 @@ constexpr uint8_t RPM = 10;
 //Angle till the next surface of the sign in degrees (°)
 constexpr uint16_t ANGLE = 120;
 //Timeout
-constexpr uint32_t TIMEOUT = 5000;
+constexpr uint32_t TIMEOUT = 10000;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -182,7 +183,7 @@ constexpr float RPM = (SPEED / 255.0) * RPM_MAX * i;        //RPM
 constexpr uint32_t TIMEOUT = (RPM>0 && nMAGNETS>0) ? 60000/(RPM*nMAGNETS) * 2: 0;
 //Calculation if the hammerwheel isnt spinning (while resetting to the starting position)
 //(Height * 60000)/(RPM * 2 * PI * Radius)
-constexpr uint32_t wtime_calc = (RPM>0 && HEIGHT_mm>0 && RADIUS_mm>0) ? (HEIGHT_mm * 60000)/(RPM * 2 * PI * RADIUS_mm) * 1.5 : 0;
+constexpr uint32_t wtime_calc = (RPM>0 && HEIGHT_mm>0 && RADIUS_mm>0) ? (HEIGHT_mm * 60000)/(RPM * 2 * PI * RADIUS_mm) * 1.2 : 0;
 //Factor speed/rs_speed -> Used for Timeout-Calculations while resetting the motor
 constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 }
@@ -191,10 +192,10 @@ constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 namespace SL{
 
 //If synchronized, the Speed is calculated according to the RPM of the Hammerwheel and the synchronization factor
-constexpr int SPEED = (SYNCHRONIZED) ? HW::RPM/(RPM_MAX*i) * 255 * SYNC_FAC : speed_;
+constexpr int SPEED = (SYNCHRONIZED) ? (HW::RPM * SYNC_FAC * 255)/(RPM_MAX*i) : speed_;
 //Calculation of the actual RPM according to the given speed in PWM and the gear ratio i
 //If synchronized, the RPM is calculated according to the RPM of the Hammerwheel and the synchronization factor
-constexpr float RPM = (SYNCHRONIZED) ? HW::RPM * i : (SPEED / 255.0) * RPM_MAX * i;
+constexpr float RPM = (SYNCHRONIZED) ? HW::RPM * SYNC_FAC : (SPEED / 255.0) * RPM_MAX * i;
 //Calculates the time in minutes for the slider to move from one end to the other
 constexpr float time_min = (RPM>0 && PITCH>0) ? L_mm/(RPM*PITCH) : 0;
 //Calculates the timeout in ms
