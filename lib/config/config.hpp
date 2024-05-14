@@ -146,9 +146,9 @@ constexpr uint8_t EN = 110;
 constexpr uint8_t MIN = 0;
 //Maximum angle of the Servo in degrees (°) (Datasheet)
 constexpr uint8_t MAX = 180;
-//Time per degree in ms (Datasheet or estimations/measurements)
+//Time per 180 degrees (Datasheet or estimations/measurements)
 //Used for error-management and timeout-calculations
-constexpr float TPD = 0.14;
+constexpr uint8_t TPR = 250;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ constexpr uint16_t BLOCKTIME = abs(MAX - MIN) * TPD * 2;
 //*Calculations Servo Coupling:
 namespace COUP{
 //Calculates the timeout in ms
-// timeout (ms) = abs(Max_Angle - Min_Angle) * Time_Per_Degree * 2 (for safety reasons)
+// timeout (ms) = abs(Max_Angle - Min_Angle)/180° * Time_Per_180Degrees * 1.5 (for safety reasons)
 //e.g. abs(180-0) * 0.14 * 2 = 50.4
-constexpr uint16_t BLOCKTIME = abs(MAX - MIN) * TPD * 2;
+constexpr uint16_t BLOCKTIME = abs(MAX - MIN)/180 * TPD * 1.5;
 }

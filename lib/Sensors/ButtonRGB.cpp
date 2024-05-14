@@ -26,20 +26,20 @@ Button::Button(uint8_t Butpin, uint8_t Rpin, uint8_t Gpin, uint8_t Bpin) {
 bool Button::read() {
     // If the Button is pressed, set triggered to true
     if(digitalRead(Butpin) == LOW){
-        triggered = true;
+        isPressed = true;
     }
     // If the Button is not pressed, set triggered to false
     else{
-        triggered = false;
+        isPressed = false;
     }
     // Return the state of the Button
-    return triggered;
+    return isPressed;
 }
 
 //* Check if the state of the Button has changed, returns true if changed
 bool Button::changed() {
     // Save the previous state of the Button
-    bool prevState = triggered;
+    bool prevState = isPressed;
     // If the state of the Button has changed, return true
     if(read() != prevState){
         return true;
@@ -48,7 +48,7 @@ bool Button::changed() {
     return false;
 }
 
-//* Wait for the Button to be pressed, blocks the programm!
+//* Wait for the Button to be isPressed, blocks the programm!
 void Button::waitForPress() {
     // Wait for the Button to be pressed
     while(this->read() != true){
@@ -63,68 +63,53 @@ void Button::waitForPress() {
 }
 
 //* Update the LED of the Button (By Number)
-void Button::updateLED(uint8_t mode){
-//(0 = off, 1 = red, 2 = green, 3 = blue, 4 = yellow, 5 = cyan, 6 = magenta, 7 = white)
-switch(mode){
-    case 0: //OFF
-        if(Rpin != 255) digitalWrite(Rpin, LOW);
-        if(Gpin != 255) digitalWrite(Gpin, LOW);
-        if(Bpin != 255) digitalWrite(Bpin, LOW);
-        break;
-    case 1: //RED
-        if(Rpin != 255) digitalWrite(Rpin, HIGH);
-        if(Gpin != 255) digitalWrite(Gpin, LOW);
-        if(Bpin != 255) digitalWrite(Bpin, LOW);
-        break;
-    case 2: //GREEN
-        if(Rpin != 255) digitalWrite(Rpin, LOW);
-        if(Gpin != 255) digitalWrite(Gpin, HIGH);
-        if(Bpin != 255) digitalWrite(Bpin, LOW);
-        break;
-    case 3: //BLUE
-        if(Rpin != 255) digitalWrite(Rpin, LOW);
-        if(Gpin != 255) digitalWrite(Gpin, LOW);
-        if(Bpin != 255) digitalWrite(Bpin, HIGH);
-        break;
-    case 4: //YELLOW
-        if(Rpin != 255 && Gpin != 255) {
+void Button::updateLED(uint8_t mode) {
+    switch (mode) {
+        case 0: // OFF
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
+            break;
+        case 1: // RED
+            digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
+            break;
+        case 2: // GREEN
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, HIGH);
+            digitalWrite(Bpin, LOW);
+            break;
+        case 3: // BLUE
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, HIGH);
+            break;
+        case 4: // YELLOW
             digitalWrite(Rpin, HIGH);
             digitalWrite(Gpin, HIGH);
-        } else {
-            updateLED(0); // turn off the LED if either pin is not defined
-        }
-        if(Bpin != 255) digitalWrite(Bpin, LOW);
-        break;
-    case 5: //CYAN
-        if(Gpin != 255 && Bpin != 255) {
+            digitalWrite(Bpin, LOW);
+            break;
+        case 5: // CYAN
+            digitalWrite(Rpin, LOW);
             digitalWrite(Gpin, HIGH);
             digitalWrite(Bpin, HIGH);
-        } else {
-            updateLED(0); // turn off the LED if either pin is not defined
-        }
-        if(Rpin != 255) digitalWrite(Rpin, LOW);
-        break;
-    case 6: //MAGENTA
-        if(Rpin != 255 && Bpin != 255) {
+            break;
+        case 6: // MAGENTA
             digitalWrite(Rpin, HIGH);
+            digitalWrite(Gpin, LOW);
             digitalWrite(Bpin, HIGH);
-        } else {
-            updateLED(0); // turn off the LED if either pin is not defined
-        }
-        if(Gpin != 255) digitalWrite(Gpin, LOW);
-        break;
-    case 7: //WHITE
-        if(Rpin != 255 && Gpin != 255 && Bpin != 255) {
+            break;
+        case 7: // WHITE
             digitalWrite(Rpin, HIGH);
             digitalWrite(Gpin, HIGH);
             digitalWrite(Bpin, HIGH);
-        } else {
-            updateLED(0); // turn off the LED if any pin is not defined
-        }
-        break;
-    default:    //DEFAULT: OFF
-        updateLED(0);
-        break;
+            break;
+        default: // OFF
+            digitalWrite(Rpin, LOW);
+            digitalWrite(Gpin, LOW);
+            digitalWrite(Bpin, LOW);
+            break;
     }
 }
 

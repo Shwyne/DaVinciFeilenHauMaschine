@@ -4,31 +4,31 @@ namespace Sensor {
 
 
 //* Constructor for HallSwitch class (Only pin is required, rest is optional)
-HallSwitch::HallSwitch(uint8_t pin, bool triggeredIf) {
+HallSwitch::HallSwitch(uint8_t pin, bool MagnetSignal) {
     this->pin = pin;    // Pin for the HallSwitch
-    this->triggeredIf = triggeredIf;    // Triggered if HIGH or LOW (Depends on the sensor, Datasheet!)
+    this->MagnetSignal = MagnetSignal;    // Triggered if HIGH or LOW (Depends on the sensor, Datasheet!)
     pinMode(pin, INPUT);    // Set pin as input
     return;   // Return
 }
 
 //* Read the HallSwitch and returns the state
 bool HallSwitch::read() {
-    // If the pin is triggered, set triggered to true
-    if(digitalRead(pin) == triggeredIf){
-        triggered = true;
+    // If the pin is detects a magnetic field, set detectsMF to true
+    if(digitalRead(pin) == MagnetSignal){
+        detectsMF = true;
     }
-    // If the pin is not triggered, set triggered to false
+    // If the pin is not detecting a magnetic field, set detectsMF to false
     else{
-        triggered = false;
+        detectsMF = false;
     }
     // Return the state of the HallSwitch
-    return triggered;
+    return detectsMF;
 }
 
 //* Check if the state of the HallSwitch has changed, returns true if changed
 bool HallSwitch::changed() {
     // Save the previous state of the HallSwitch
-    bool prevState = triggered;
+    bool prevState = detectsMF;
     // If the state of the HallSwitch has changed, return true
     if(this->read() != prevState){
         return true;

@@ -55,7 +55,6 @@ public:
   void setPositions(uint8_t pos1 = 255, uint8_t pos2 = 255);  //Set the Positions for the Servo (pos1 = OFF, pos2 = ON)
 
   void write(uint8_t angle);  //Write a specific angle to the Servo
-  void run(uint8_t angle);    //Run the Servo to a specific angle (Does same as write, just a different name)
   void runToPos(uint8_t pos); //Run the Servo to a specific position (pos1 = OFF, pos2 = ON) -> blocks until reachedTarget()
   
   ~ServoExp();  //Destructor: Detach the Servo

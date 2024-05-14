@@ -15,10 +15,10 @@ namespace Sensor {
 class HallSwitch {
 private:
   uint8_t pin;  //Pin for the HallSwitch
-  bool triggered; //State of the HallSwitch (Triggered = detected magnetic field, not triggered = no magnetic field detected)
-  bool triggeredIf; //Triggered if HIGH or LOW (Depends on the sensor, Datasheet!)
+  bool detectsMF; //True, if Magnetic Field is detected
+  bool MagnetSignal; //Defines, if the HallSwitch detects a Magnetic Field while being LOW or HIGH
 public:
-  HallSwitch(uint8_t pin, bool triggeredIf = HIGH); //Constructor: Pin is required, triggeredIf is optional
+  HallSwitch(uint8_t pin, bool MAgnetSignal = HIGH); //Constructor: Pin is required, triggeredIf is optional
   bool read();  //Read the HallSwitch and returns the state
   bool changed(); //Check if the state of the HallSwitch has changed, returns true if changed
 };
@@ -48,7 +48,7 @@ private:
   uint8_t Rpin;   //Pin for the Red LED
   uint8_t Gpin;   //Pin for the Green LED
   uint8_t Bpin;   //Pin for the Blue LED
-  bool triggered; //State of the Button (Triggered = pressed, not triggered = not pressed)
+  bool isPressed; //State of the Button (Triggered = pressed, not triggered = not pressed)
 public:
   Button(uint8_t Butpin, uint8_t Rpin = 255, uint8_t Gpin = 255, uint8_t Bpin = 255); //Constructor: Butpin is required, Rpin, Gpin and Bpin are optional
   bool read();  //Read the Button and returns the state
