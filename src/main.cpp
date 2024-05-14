@@ -67,14 +67,17 @@ void setup() {
   Serial.begin(SERIALSET::BAUTRATE); // Starts Serial Connection between Arduino and PC via USB -> Baudrate = Bits per second (Bps)
   Serial.println("Setup started."); 
   }
-
+  //* Servo-Setup:
+  HSsv.attach(); // Initializes Servo Hammerstop
+  COsv.attach(); // Initializes Servo Kupplung
+  
   //*EEPROM Error-Checking:
   pinMode(pin::CLEAR_ERROR, INPUT_PULLUP);  //Sets the Clear-Error-Button to Input-Pullup
   if(hasErrorEEPROM()){ //If an Error is stored in the EEPROM, read the Error and set the Machine to the Error-State
     if(DEBUG>0) Serial.println("EEPROM-Error detected.");
     MachineStatus = StatusClass(EEPROM.read(EEPROM_ADDRESS+1), EEPROM.read(EEPROM_ADDRESS+2));
-    checkState(MachineStatus);
     if(ERROR_MANAGEMENT && MachineStatus.getStatus() != CompStatus::SUCCESS) skipInit = true; //If Error-Management is enabled and the Error-Status is not Success, skip the initStateOfMachine
+    checkState(MachineStatus);
   }
 
   //*Fan-Setup:
@@ -91,12 +94,6 @@ void setup() {
   digitalWrite(pin::STP_SLP, LOW);  // Disables the sleep mode of the stepperdriver
   step::setMicroSteps(STP::MICRO_STEPS);  // Sets the microsteps of the stepper
 
-  //* Servo-Setup:
-  HSsv.attach(); // Initializes Servo Hammerstop
-  COsv.attach(); // Initializes Servo Kupplung
-  COsv.write(COUP::DIS); // Sets the Coupling to the disenaged position
-  HSsv.write(HS::OFF); // Sets the Hammerstop to the off position
-
   if(skipInit == false)initStateOfMachine(); //Initializes the Machine to the Home-Position
   
   if(DEBUG>0) Serial.println("Setup done.");  
@@ -107,7 +104,6 @@ void setup() {
 void loop() {
 
   //* ----------------- IDLE ---------------------------
-
   if(DEBUG>0) Serial.println("IDLE: Waiting for Go-Signal.");
   //*1. Sign to Pos 1:
   if(STP::ENABLED == true){  //If the sign is not at the home position and the stepper is enabled (config)
@@ -266,9 +262,12 @@ void inline initStateOfMachine(){
     Serial.println("Press Go-Button to initialize the machine.");
     Go.waitForPress();
   }
+  
   //*3. Update the LED to yellow
   Go.updateLED(LED::YELLOW);
   if(DEBUG>0) Serial.print("INIT: Begin | ");
+  COsv.write(COUP::DIS); // Sets the Coupling to the disenaged position
+  HSsv.write(HS::OFF); // Sets the Hammerstop to the off position
   //*4. Checking Position (Slider, Weight), if not in Start position
   if(SLes.read() != Slider::RIGHT || WGes.read() != Weight::TOP){ //If one of the axis isnt at start position -> Reset
     COsv.write(COUP::DIS);  //Disengaging the Coupling
@@ -424,6 +423,7 @@ StatusClass home(){
   if(DEBUG>1) Serial.println("Homed");  //Debug-Message
   SGst.setCurrentPosition(0); //Sets the current position of the stepper to 0
   digitalWrite(pin::STP_SLP, LOW);  //Disables the Stepper-Driver
+  delay(500);
   return StatusClass(CompStatus::SUCCESS, FuncGroup::SG); //Returns a Success-Status
 }
 
@@ -432,6 +432,7 @@ void move(int steps){ //Moves the stepper a specific amount of steps
   SGst.moveTo(steps); //Sets the stepper to the given position
   SGst.runToPosition(); //Runs the stepper to the given position
   digitalWrite(pin::STP_SLP, LOW);  //Disables the Stepper-Driver
+  delay(500);
   return;
 }
 
@@ -449,7 +450,7 @@ StatusClass hammerstop() {
   HWdc.run(HW::SPEED);
   uint32_t errtime = millis();
   while(HWha.read() == true){
-    delay(1);//TODO: Add error-management and test it
+    delay(1);
     if(millis() - errtime > HW::TIMEOUT){
       //TimeOut Error-Handling -> millis() - errtime = deltaT
       if(ERROR_MANAGEMENT) return StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);
@@ -464,11 +465,15 @@ StatusClass hammerstop() {
     }
   }
   //Delay to match position perfectly
-  delay(4500/HW::RPM);
+  uint32_t WaitTillEngage = 2200/HW::RPM;
+  Serial.println(HW::RPM);
+  Serial.println(WaitTillEngage);
+  delay(WaitTillEngage);
   HWdc.brake();
   delay(100);
   //Motor in postion -> engage hammerstop
   HSsv.run(HS::ON);
+  delay(500);
   
   if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
   return StatusClass(CompStatus::SUCCESS, FuncGroup::HW);
@@ -480,8 +485,9 @@ StatusClass hammergo() {
   if(DEBUG>1) Serial.println("HAMMERGO: Starts");
   HSsv.run(HS::OFF);
   HWdc.run(HW::SPEED);
-  delay(5000/HW::RPM);
+  delay(1000/HW::RPM);
   HWdc.brake();
+  delay(500);
   if(DEBUG>1) Serial.println("HAMMERGO: Done");
   return StatusClass(CompStatus::SUCCESS, FuncGroup::HW);
 }
