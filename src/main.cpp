@@ -4,6 +4,7 @@
 #include "Sensors.hpp"  //Sensors
 #include "config.hpp"   //Configurations
 #include <AccelStepper.h>   //Stepper-Library
+#include "TestFunctions.hpp"    //Test-Functions
 
 //*----------------- Variables ----------------------
 
@@ -64,7 +65,7 @@ void setup() {
   bool skipInit = false;  //Used for skipping the initStateOfMachine of setup in case of eeprom-error (cuz after clearing, init will be called anyways)
   //*Serial-Setup:
   if(DEBUG>0) { //If Debugging is enabled, start the Serial Connection
-  Serial.begin(SERIALSET::BAUTRATE); // Starts Serial Connection between Arduino and PC via USB -> Baudrate = Bits per second (Bps)
+  Serial.begin(BAUTRATE); // Starts Serial Connection between Arduino and PC via USB -> Baudrate = Bits per second (Bps)
   Serial.println("Setup started."); 
   }
   //* Servo-Setup:
@@ -88,8 +89,8 @@ void setup() {
   }
 
   //* Sign-Stepper Setup:
-  SGst.setMaxSpeed(5000.0); // Sets the maximum speed of the stepper
-  SGst.setAcceleration(1000.0); // Sets the acceleration of the stepper
+  SGst.setMaxSpeed(STP::MAX_SPEED); // Sets the maximum speed of the stepper
+  SGst.setAcceleration(STP::ACCEL); // Sets the acceleration of the stepper
   digitalWrite(pin::STP_RST, HIGH); // Disables Reset-Mode of the stepperdriver
   digitalWrite(pin::STP_SLP, LOW);  // Disables the sleep mode of the stepperdriver
   step::setMicroSteps(STP::MICRO_STEPS);  // Sets the microsteps of the stepper
@@ -136,18 +137,31 @@ void loop() {
   //*6. Waiting for ONE endstop to be triggered
   while(WGes.read() != Weight::BOTTOM && SLes.read() != Slider::LEFT){  //Is running till one endstop is reached (Bottom or Left)
     if(ERROR_MANAGEMENT){ //If Error-Management is enabled
+      //*6a. Hammerwheel Rotation Check:
+      //6a.1. Starts Timer when Magnet is detected
       if(HWha.read() == HIGH && detectedMagnet == false){ //If the Hall-Sensor is triggered and no magnet was detected before
         detectedMagnet = true;  //Sets the detectedMagnet to true
         hwtime = millis();    //Sets the current time to the hammerwheel-timer
       } //This prevents the timer to be resetet, if the Hall-Sensor is still detecting a magnetic field.
+      //6a.2. Allows the timer to be started again after the magnet has passed
       else if(HWha.read() == LOW && detectedMagnet == true){  //If the Hall-Sensor is not triggered and a magnet was detected before
         detectedMagnet = false; //Sets the detectedMagnet to false
       }
+      //6a.3. Checks if Timer is greater than expected time
       if((millis() - hwtime) >= HW::TIMEOUT){ //Timeout occurs, if the time from the current run (millis() - hwtime) is greater than HW::TIMEOUT
         MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::HW);  //Sets the MachineStatus to a Timeout-Error
         checkState(MachineStatus);  //Error-Handling
         return;
       }
+      //*6b. Weight Timeout check:
+      //Checks if the Weight-Endstop is reached in time (calculation by geometry)
+      if((millis() - ctime) >= HW::wtime_calc){  //If the time from the current run (millis() - ctime) is greater than HW::wtime_calc
+        MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::WG);  //Sets the MachineStatus to a Timeout-Error
+        checkState(MachineStatus);  //Error-Handling
+        return;
+      }
+      //*6c. Slider Timeout check:
+      //Checks if the Slider-Endstop is reached in time (calculation by geometry)
       if((millis() - ctime + stime) >= SL::TIMEOUT){  //Timeout occurs, if the sum of time from when the slider started (stime) and the time from the current run (millis() - ctime) is greater than SL::TIMEOUT
         MachineStatus = StatusClass(CompStatus::TIMEOUT, FuncGroup::SL);  //Sets the MachineStatus to a Timeout-Error
         checkState(MachineStatus);  //Error-Handling
@@ -472,7 +486,7 @@ StatusClass hammerstop() {
   HWdc.brake();
   delay(100);
   //Motor in postion -> engage hammerstop
-  HSsv.run(HS::ON);
+  HSsv.write(HS::ON);
   delay(500);
   
   if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
@@ -483,7 +497,7 @@ StatusClass hammerstop() {
 
 StatusClass hammergo() {
   if(DEBUG>1) Serial.println("HAMMERGO: Starts");
-  HSsv.run(HS::OFF);
+  HSsv.write(HS::OFF);
   HWdc.run(HW::SPEED);
   delay(1000/HW::RPM);
   HWdc.brake();

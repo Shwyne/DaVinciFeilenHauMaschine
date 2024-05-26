@@ -3,35 +3,24 @@
 #include "pins.hpp"
 #include "Enumerator.hpp"
 
-
-
 //---------------------------------------------------------------------------------------------
 //? Settings for the user to change:
 //---------------------------------------------------------------------------------------------
 
 //* General Settings:
-
 //Fan -> cooling the electronics whenever the machine runs
 constexpr bool FAN = 1;
-//Temperature Measurement for controlling the Fan (not implemented yet)
-constexpr bool TEMP_MEAS = 0; 
-
-
-//---------------------------------------------------------------------------------------------
-//*Serial-Settings:
-namespace SERIALSET{
-
-//Baudrate in Bits per Second (Bps)
-//Check Device-Manager -> COM -> Arduino -> Settings -> Properties -> Port Settings
-//Standard: 9600
-//The Arduino might be called differently depending on the manufacturer
-constexpr int BAUTRATE = 9600;  
-}
+//Bautrate of the Serial-Communication
+constexpr int BAUTRATE = 9600; 
 
 //---------------------------------------------------------------------------------------------
 //*Debugging and Error-Management:
 //0 = off, 1 = basic info, 2 = detailed info
 constexpr uint8_t DEBUG = 0;
+//Enables the Test-Button for the Test-Functions, otherwise delays are used instead
+constexpr bool TEST_BUTTON = 1;
+//Enables the Test-LED for the Test-Functions, otherwise delays are used instead
+constexpr bool TEST_LED = 1;
 //If Error-Management is enabled, an error will lead to the error state
 //If not enabled, error will be ignored   
 constexpr bool ERROR_MANAGEMENT = 1;
@@ -115,6 +104,10 @@ constexpr uint8_t RPM = 10;
 constexpr uint16_t ANGLE = 120;
 //Timeout
 constexpr uint32_t TIMEOUT = 10000;
+//Acceleration
+constexpr uint16_t ACCEL = 1000;
+//Max Speed
+constexpr uint16_t MAX_SPEED = 5000;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -132,7 +125,7 @@ constexpr uint8_t MIN = 0;
 constexpr uint8_t MAX = 180;
 //Time per degree in ms (Datasheet or estimations/measurements)
 //Used for error-management and timeout-calculations
-constexpr float TPD = 0.14;
+constexpr float TPR = 250;
 
 }
 
@@ -170,9 +163,9 @@ constexpr bool TRIGGERED_IF = 0;
 
 
 
-//===========================================================================
-//! Dont change anything after! It's for the compiler to calculate the values.
-//===========================================================================
+//=========================================================================================================================<
+//!                 Dont change anything after! It's for the compiler to calculate the values.
+//=========================================================================================================================<
 
 //*Calculations Hammerwheel:
 namespace HW{
@@ -201,6 +194,7 @@ constexpr float time_min = (RPM>0 && PITCH>0) ? L_mm/(RPM*PITCH) : 0;
 //Calculates the timeout in ms
 //If the slider didnt reach its destination in time, an error will be triggered
 constexpr uint32_t TIMEOUT = time_min * 60000 * 1.2;
+//Not needed right now, but can be used like wtime_calc in HW
 constexpr uint32_t stime_calc = TIMEOUT;
 //Factor speed/rs_speed -> Used for Timeout-Calculations while resetting the motor
 constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
@@ -208,6 +202,8 @@ constexpr float RS_TO_FACTOR = abs(float(SPEED)/float(RS_SPEED));
 
 //*Calculations Stepper:
 namespace STP{
+//Calculates the steps for a full rotation (Steps * Microsteps)
+constexpr uint16_t FULL_REV = SPR * MICRO_STEPS;
 // Calculates the steps needed to reach the next surface of the sign
 constexpr uint16_t POS = (STP::SPR * STP::MICRO_STEPS * (STP::ANGLE/360.0)) * STP::i;
 }
@@ -217,7 +213,7 @@ namespace HS{
 //Calculates the timeout in ms
 // timeout (ms) = abs(Max_Angle - Min_Angle) * Time_Per_Degree * 2 (for safety reasons)
 //e.g. abs(180-0) * 0.14 * 2 = 50.4
-constexpr uint16_t BLOCKTIME = abs(MAX - MIN) * TPD * 2;
+constexpr uint16_t BLOCKTIME = abs(MAX - MIN)/180 * TPR * 1.5;
 }
 
 //*Calculations Servo Coupling:
@@ -225,5 +221,5 @@ namespace COUP{
 //Calculates the timeout in ms
 // timeout (ms) = abs(Max_Angle - Min_Angle)/180° * Time_Per_180Degrees * 1.5 (for safety reasons)
 //e.g. abs(180-0) * 0.14 * 2 = 50.4
-constexpr uint16_t BLOCKTIME = abs(MAX - MIN)/180 * TPD * 1.5;
+constexpr uint16_t BLOCKTIME = abs(MAX - MIN)/180 * TPR * 1.5;
 }

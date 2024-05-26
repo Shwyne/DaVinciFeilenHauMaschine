@@ -39,6 +39,7 @@ constexpr uint8_t STP_M2 = A9;
 
 //*Endstops (digital):
 //Endstops WG = Weight, SL = Slider
+//T = Top, B = Bottom, L = Left, R = Right (from the front)
 //Normally open, pull-up resistor -> HIGH = no signal, LOW = signal
 constexpr uint8_t WG_ES_T = 43;
 constexpr uint8_t WG_ES_B = 45;
@@ -56,7 +57,7 @@ constexpr uint8_t SG_HALL = 25;
 //Normally open, pull-up resistor -> HIGH = no signal, LOW = signal
 constexpr uint8_t GO_BUT = 33; // Taster "Go"
 //LEDS: LOW = Off, HIGH = On, R = Red, G = Green, B = Blue
-//LEDS (optional): Connect to PWM -> analogWrite(pin, pwm_value) -> 8-bit Colors
+//LEDS (optional): Connect to PWM -> analogWrite(pin, pwm_value) for more colors (255^3 - 1 = 16.777.215 colors)
 constexpr uint8_t GO_LED_R = 49; 
 constexpr uint8_t GO_LED_G = 51;    
 constexpr uint8_t GO_LED_B =53;  
@@ -67,7 +68,6 @@ constexpr uint8_t GO_LED_B =53;
 constexpr uint8_t CLEAR_ERROR = 29;
 // Fan -> cooling the electronics whenever the machine runs
 // LOW = Off, HIGH = On
-// optional: Add temperature sensor to control the fan 
 constexpr uint8_t FAN = 31; 
 
 } // namespace pin
