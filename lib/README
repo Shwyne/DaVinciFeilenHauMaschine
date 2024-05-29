@@ -1,12 +1,1 @@
-This Folder contains all libraries made for this project:
-
--> AllFunctions = Every Function to run several repeating functions of the machine, measuring or testing
--> config = Everything to configure (Settings, Pins, etc.)
--> Drivers = Custom Libraries for controlling several Hardware (Actors)
--> Sensors = Custom Libraries for retrieving sensor data 
-
-PlatformIO Library Dependency Finder will find automatically dependent
-libraries scanning project source files.
-
-More information about PlatformIO Library Dependency Finder
-- https://docs.platformio.org/page/librarymanager/ldf.html
+#### Check the folders for detailed informations
