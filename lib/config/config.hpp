@@ -11,7 +11,7 @@
 //Fan -> cooling the electronics whenever the machine runs
 constexpr bool FAN = 1;
 //Bautrate of the Serial-Communication
-constexpr int BAUTRATE = 9600; 
+constexpr uint32_t BAUTRATE = 9600; 
 
 //---------------------------------------------------------------------------------------------
 //*Debugging and Error-Management:
@@ -94,7 +94,7 @@ constexpr bool ENABLED = 1;
 // Possible with this driver: 1,2,4,8,16,32
 constexpr uint8_t MICRO_STEPS = 32;
 // Default steps per revolution: 200 -> for most stepper-motors (Datasheet)   
-constexpr uint8_t SPR = 200;            //Steps per Revolution
+constexpr uint16_t SPR = 200;            //Steps per Revolution
 //Gear Ratio inbetween the Stepper and the Sign shaft
 constexpr float i = 1.2;
 //Speed of the Stepper in RPM

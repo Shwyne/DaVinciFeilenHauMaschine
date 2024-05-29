@@ -1,9 +1,7 @@
-//#include "TestFunctions.hpp"    //All Functions includes all (custom) libraries and Arduino.h
 #include "ExceptHandling.hpp"  //Error-Handling
-#include "drivers.hpp"  //Drivers
+#include "Drivers.hpp"  //Drivers
 #include "Sensors.hpp"  //Sensors
-#include "config.hpp"   //Configurations
-#include <AccelStepper.h>   //Stepper-Library
+#include "Config.hpp"   //Configurations
 #include "TestFunctions.hpp"    //Test-Functions
 
 //*----------------- Variables ----------------------
@@ -19,22 +17,15 @@ MP6550 SLdc(pin::SL_IN1, pin::SL_IN2, pin::SL_SLP, SL::REVERSED, SL::AUTO_SLEEP)
 MP6550 HWdc(pin::HW_IN1, pin::HW_IN2, pin::HW_SLP, HW::REVERSED, HW::AUTO_SLEEP); // Motor Hammerwheel (In1, In2, Sleep)
 ServoExp HSsv(pin::HS_SRV, HS::MIN, HS::MAX, HS::BLOCKTIME); // Servo Hammerstop (Pin, Min, Max, Pos1, Pos2)
 ServoExp COsv(pin::CO_SRV, COUP::MIN, COUP::MAX, COUP::BLOCKTIME); // Servo Kupplung (Pin, Min, Max, Pos1, Pos2)
-AccelStepper SGst(AccelStepper::DRIVER, pin::STP_STP, pin::STP_DIR); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
+StepperExp SGst(pin::STP_STP, pin::STP_DIR); // Stepper Schild (Interface, Step-Pin, Direction-Pin, Enable-Pin, Max.Speed, Acceleration, Hall-Sensor-Pin
 Sensor::Endstops WGes(pin::WG_ES_T, pin::WG_ES_B); // Endschalter Weight (BottomPin, TopPin, TriggerState)
 Sensor::Endstops SLes(pin::SL_ES_R, pin::SL_ES_L); // Endschalter Slider (LeftPin, RightPin, TriggerState)
-Sensor::HallSwitch HWha(pin::HR_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Hammerwheel (Hallpin, TriggerState)
+Sensor::HallSwitch HWha(pin::HW_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Hammerwheel (Hallpin, TriggerState)
 Sensor::HallSwitch SGha(pin::SG_HALL,HALL::TRIGGERED_IF); // Hall-Sensor Sign (Hallpin, TriggerState)
 Sensor::Button Go(pin::GO_BUT,pin::GO_LED_R,pin::GO_LED_G,pin::GO_LED_B); // Go-Button (Pin, TriggerState)
 
 StatusClass MachineStatus = StatusClass(CompStatus::SUCCESS, FuncGroup::UNDEFINED);
 
-//*-------------------- Math ---------------------------
-
-//Calculates the logarithm to the base 2
-//Used in the stepper-function to calculate the microsteps
-namespace mathFunc {
-    uint8_t log2(uint8_t n);
-}
 
 //*----------- Servo/Stepper Functions ----------------
 
@@ -46,9 +37,7 @@ namespace serv {
 
 //Stepper Functions
 namespace step {
-    void setMicroSteps(uint8_t microSteps); //Sets the microsteps for the stepper (1-32);
     StatusClass home();                            //Homes the stepper (Hall-Sensor and Magnet -> Pos1)
-    void move(int steps);                   //Moves the stepper a specific amount of steps
 }
 
 //*----------------- States -----------------------
@@ -93,7 +82,9 @@ void setup() {
   SGst.setAcceleration(STP::ACCEL); // Sets the acceleration of the stepper
   digitalWrite(pin::STP_RST, HIGH); // Disables Reset-Mode of the stepperdriver
   digitalWrite(pin::STP_SLP, LOW);  // Disables the sleep mode of the stepperdriver
-  step::setMicroSteps(STP::MICRO_STEPS);  // Sets the microsteps of the stepper
+  SGst.setupMS(pin::STP_M0, pin::STP_M1, pin::STP_M2); // Sets the microsteps of the stepperdriver
+  SGst.setMS(STP::MICRO_STEPS); // Sets the microsteps of the stepperdriver
+  SGst.setPos(STP::SPR, STP::ANGLE*STP::i); // Sets the position for the stepper to move to
 
   if(skipInit == false)initStateOfMachine(); //Initializes the Machine to the Home-Position
   
@@ -125,7 +116,7 @@ void loop() {
   //*2. Button LED to cyan:
   Go.updateLED(LED::CYAN);        //Updates the LED to cyan, showing the visitor the machine is running
   //*3. Stepper to Pos 2:
-  if(STP::ENABLED) step::move(STP::POS); //Moves the stepper to the position (config) -> Sign pos 2
+  if(STP::ENABLED) SGst.nextPos(); //Moves the stepper to the position (config) -> Sign pos 2
   //*4. Running the Motors:
   HWdc.run(HW::SPEED);             //Runs the Hammerwheel with the given speed (config)
   SLdc.run(SL::SPEED);              //Runs the Slider with the given speed (config)
@@ -185,7 +176,7 @@ void loop() {
   Go.updateLED(LED::YELLOW);
 
   //*2. Stepper to Pos 3:
-  if(STP::ENABLED) step::move(2*STP::POS); //Moves the stepper to the next position (config) -> Sign pos 3
+  if(STP::ENABLED) SGst.nextPos(); //Moves the stepper to the next position (config) -> Sign pos 3
 
   //*3. Decoupling the Slider and Hammer shafts
   COsv.write(COUP::DIS);
@@ -394,22 +385,6 @@ void inline checkState(StatusClass status){
 
 namespace step{
 
-//Sets the microsteps for the stepper (1-32) and writes the correct values to the pins
-void setMicroSteps(uint8_t microSteps){
-  // Calculate the logarithm base 2 of microSteps, rounding down
-  uint8_t log2MicroSteps = (microSteps > 0) ? mathFunc::log2(microSteps) : 0;
-
-  // Calculate the values for M0, M1, and M2
-  bool M0 = log2MicroSteps & 1;
-  bool M1 = log2MicroSteps & 2;
-  bool M2 = log2MicroSteps & 4;
-
-  // Write the values to the pins
-  digitalWrite(pin::STP_M0, M0);
-  digitalWrite(pin::STP_M1, M1);
-  digitalWrite(pin::STP_M2, M2);
-}
-
 //Homes the Stepper to the Home-Position (Hall-Sensor and Magnet)
 StatusClass home(){
   digitalWrite(pin::STP_SLP, HIGH); //Enables the Stepper-Driver
@@ -439,15 +414,6 @@ StatusClass home(){
   digitalWrite(pin::STP_SLP, LOW);  //Disables the Stepper-Driver
   delay(500);
   return StatusClass(CompStatus::SUCCESS, FuncGroup::SG); //Returns a Success-Status
-}
-
-void move(int steps){ //Moves the stepper a specific amount of steps
-  digitalWrite(pin::STP_SLP, HIGH); //Enables the Stepper-Driver
-  SGst.moveTo(steps); //Sets the stepper to the given position
-  SGst.runToPosition(); //Runs the stepper to the given position
-  digitalWrite(pin::STP_SLP, LOW);  //Disables the Stepper-Driver
-  delay(500);
-  return;
 }
 
 //* ----------------- Servo Functions -----------------------
@@ -480,8 +446,8 @@ StatusClass hammerstop() {
   }
   //Delay to match position perfectly
   uint32_t WaitTillEngage = 2200/HW::RPM;
-  Serial.println(HW::RPM);
-  Serial.println(WaitTillEngage);
+  if(DEBUG>1)Serial.println(HW::RPM);
+  if(DEBUG>1)Serial.println(WaitTillEngage);
   delay(WaitTillEngage);
   HWdc.brake();
   delay(100);
@@ -506,16 +472,4 @@ StatusClass hammergo() {
   return StatusClass(CompStatus::SUCCESS, FuncGroup::HW);
 }
 
-} //? namespace serv
-
-namespace mathFunc{
-uint8_t log2(uint8_t n){
-  uint8_t result = 0;
-  while(n >>= 1){
-    result++;
-  }
-  return result;
-}
-} // namespace mathfunc
-
- 
+} // namespace serv

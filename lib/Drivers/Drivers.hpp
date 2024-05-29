@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <AccelStepper.h>
 
 //*----------------------- MP6550 -----------------------*//
 
@@ -63,4 +64,35 @@ public:
   void runToPos(uint8_t pos); //Run the Servo to a specific position (pos1 = OFF, pos2 = ON) -> blocks until reachedTarget()
   
   ~ServoExp();  //Destructor: Detach the Servo
+};
+
+//*----------------------- Stepper Expansion -----------------------*//
+
+//Derived Class from AccelStepper adding some additional functions
+class StepperExp : public AccelStepper {
+  private:
+    uint8_t M0pin;    //Pin for M1
+    uint8_t M1pin;    //Pin for M2
+    uint8_t M2pin;    //Pin for M3
+    uint8_t SLPpin = 255;   //Pin for Sleep (default = 255 -> Disables Sleep Functions)
+    uint8_t microSteps = 1;   //Microstep Mode
+    uint32_t StepsPerRev = 200;  //Steps per Revolution
+    uint32_t StepsPerPos = 66;  //Steps per Position
+    uint32_t currentPos = 0;  //Current Position
+    bool autoSleep;  //Auto-Sleep Mode
+
+    uint8_t log2(uint8_t n);  //Calculate the Log2 of a number
+  public:
+    //Constructor calls constructor of a AccelStepper
+    StepperExp(uint8_t stepPin, uint8_t dirPin) : AccelStepper(AccelStepper::DRIVER, stepPin, dirPin) {}
+    void setupMS(uint8_t M0pin, uint8_t M1pin, uint8_t M2pin);  //Set the Microsteps for the Stepper
+    void setMS(uint8_t microSteps);  //Set the Microsteps for the Stepper
+    void setPos(uint16_t steps, uint8_t angle);  //Set the Position for the Stepper (steps = Steps per Revolution, angle = Angle till the next surface of the sign in degrees (°)
+    void setSleep(uint8_t SLPpin, bool autoSleep = false);  //Set the Sleep Mode for the Stepper (autoSleep = true/false
+    void zeroPos(); //Set the Position to 0
+    uint8_t getMS();  //Get the Microsteps of the Stepper
+    void nextPos();  //Go to the next position
+    void prevPos();  //Go to the previous position
+    void sleep();  //Put the Stepper to Sleep
+    void wake();  //Wake the Stepper up
 };

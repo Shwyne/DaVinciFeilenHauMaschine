@@ -20,7 +20,7 @@ private:
   bool MagnetSignal; //Defines, if the HallSwitch detects a Magnetic Field while being LOW or HIGH
 
 public:
-  HallSwitch(uint8_t pin, bool MAgnetSignal = HIGH); //Constructor: Pin is required, triggeredIf is optional
+  HallSwitch(uint8_t pin, bool MagnetSignal = HIGH); //Constructor: Pin is required, triggeredIf is optional
   bool read();  //Read the HallSwitch and returns the state
   bool changed(); //Check if the state of the HallSwitch has changed, returns true if changed
 

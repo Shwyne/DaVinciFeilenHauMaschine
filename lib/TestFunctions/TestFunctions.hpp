@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
-#include <AccelStepper.h>
 #include "Drivers.hpp"
 #include "Sensors.hpp"
 #include "config.hpp"
@@ -12,7 +10,7 @@ extern MP6550 SLdc;         //Slider
 extern MP6550 HWdc;         //Hammerwheel
 extern ServoExp HSsv;       //Hammerstop
 extern ServoExp COsv;       //Coupling
-extern AccelStepper SGst;   //Slider Stepper
+extern StepperExp SGst;   //Slider Stepper
 extern Sensor::Endstops WGes;       //Weight-Endstops
 extern Sensor::Endstops SLes;       //Slider-Endstops
 extern Sensor::HallSwitch HWha;     //Hammerwheel Hall-Switch
@@ -31,7 +29,7 @@ void printEndstops(uint8_t status); //Prints the status of the Endstops
 namespace testComp {
     void DC(MP6550 DC, uint8_t speed = 255);    //Tests a Motor-Driver
     void Servo(ServoExp srv, uint8_t pos1 = 0, uint8_t pos2 = 180);    //Tests a Servo
-    void Stepper(AccelStepper stp);    //Tests a Stepper
+    void Stepper(StepperExp stp);    //Tests a Stepper
     void Endstops(Sensor::Endstops es);     //Tests a pair of Endstops
     void Hall(Sensor::HallSwitch hall);     //Tests a Hall-Switch
     void Button();     //Tests a Button
@@ -43,4 +41,6 @@ namespace testFunc {
     void WeightHammer();   //Test the Weight and Hammerwheel
     void Slider();      //Test the Slider
     void Coupling();    //Test the Coupling
+    void hammergo();    //Function for hammergo
+    void hammerstop();  //Function for hammerstop
 }

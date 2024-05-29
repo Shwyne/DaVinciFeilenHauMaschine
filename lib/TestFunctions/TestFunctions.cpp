@@ -496,6 +496,8 @@ void WeightHammer(){
       Go.updateLED(LED::YELLOW);
     }
     if(DEBUG>0) Serial.println("Weight NOT Top");
+    if(DEBUG>1) Serial.println("Engaging Hammerstop");
+    hammerstop();
     if(DEBUG>0) Serial.println("Moving Weight to Top");
     HWdc.run(-HW::RS_SPEED);
     while(WGes.read() != Weight::TOP){
@@ -506,6 +508,8 @@ void WeightHammer(){
     if(useButtonLED){
       Go.updateLED(LED::GREEN);
     }
+    if(DEBUG>1) Serial.println("Disengaging Hammerstop");
+    hammergo();
     delay(1000);
   }
   //*Moving Weight down, hammer is working
@@ -538,7 +542,8 @@ void WeightHammer(){
   else{
     delay(delayTime);
   }
-
+  if(DEBUG>1) Serial.println("Engaging Hammerstop");
+  hammerstop();
   //*Moving Weight up, hammer is blocked in position
   if(DEBUG>0) Serial.println("Moving Weight to Top");
   if(useButtonLED){
@@ -550,6 +555,8 @@ void WeightHammer(){
   }
   HWdc.brake();
   if(DEBUG>0) Serial.println("Weight reached Top");
+  if(DEBUG>1) Serial.println("Disengaging Hammerstop");
+  hammergo();
   //*Test finished
   if(DEBUG>0) Serial.println("Test finished.");
   return;
@@ -678,6 +685,43 @@ void Coupling(){
       }
     }
   }
+}
+
+void hammergo(){
+  if(DEBUG>1) Serial.println("HAMMERGO: Starts");
+  HSsv.write(HS::OFF);
+  HWdc.run(HW::SPEED);
+  delay(1000/HW::RPM);
+  HWdc.brake();
+  delay(500);
+  if(DEBUG>1) Serial.println("HAMMERGO: Done");
+  return ;
+}
+
+void hammerstop() {
+  //Debug Message
+  if(DEBUG>1) Serial.println("HAMMERSTOP: Starts"); 
+  HWdc.run(HW::SPEED);
+  while(HWha.read() == true){
+    delay(1);
+  }
+  //Wait till magnet isnt detected anymore
+  while(HWha.read() != true){
+    delay(1);
+  }
+  //Delay to match position perfectly
+  uint32_t WaitTillEngage = 2200/HW::RPM;
+  if(DEBUG>1)Serial.println(HW::RPM);
+  if(DEBUG>1)Serial.println(WaitTillEngage);
+  delay(WaitTillEngage);
+  HWdc.brake();
+  delay(100);
+  //Motor in postion -> engage hammerstop
+  HSsv.write(HS::ON);
+  delay(500);
+  
+  if(DEBUG>1) Serial.println("HAMMERSTOP: Done");
+  return;
 }
 
 } // namespace testFunc

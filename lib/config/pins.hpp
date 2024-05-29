@@ -49,7 +49,7 @@ constexpr uint8_t SL_ES_R = 39;
 //*Hall-Sensors (digital):
 //Hall-Sensors HR = Hammerwheel, SG = Sign
 //Normally open, pull-up resistor -> HIGH = no signal, LOW = signal
-constexpr uint8_t HR_HALL = 27; 
+constexpr uint8_t HW_HALL = 27; 
 constexpr uint8_t SG_HALL = 25;
 
 //*RGB-Button (digital):

@@ -1,66 +1,73 @@
-# Sensors.hpp
+#### Overview
 
-## Overview
+The `sensors.hpp` file contains the declaration of various sensor classes used in the DaVinciFeilenHauMaschine project.
 
-The `sensors.hpp` file contains the implementation of various sensor classes used in the DaVinciFeilenHauMaschine project.
+#### Table of Contents
+- [Hall-Switch Class](#hall-switch-class)
+- [Endstop Class](#endstop-class)
+- [Button Class](#button-class)
 
-## Table of Contents
+### Hall-Switch Class
 
-- [Sensors.hpp](#sensorshpp)
-  - [Overview](#overview)
-  - [Sensor Class](#sensor-class)
-    - [Properties](#properties)
-    - [Methods](#methods)
-  - [Temperature Sensor Class](#temperature-sensor-class)
-    - [Properties](#properties-1)
-    - [Methods](#methods-1)
-  - [Pressure Sensor Class](#pressure-sensor-class)
-    - [Properties](#properties-2)
-    - [Methods](#methods-2)
-  - [Usage](#usage)
+The class `HallSwitch` stores data regarding a hall-switch sensor. It stores the following `attributes`:
 
-## Sensor Class
+| Datatype | Name | Description |
+|------|------|-------------|
+| uint8_t | `pin` | The pin number of the hall-switch sensor. |
+| bool | `detectsMF` | True, if the last read of the sensor detected a magnetic field |
+| bool | `MagnetSignal` | Defines if the sensor creates `HIGH` or `LOW` while detecting a magnetic field strong enough to trigger |
 
-The `Sensor` class is the base class for all sensor types. It provides common functionality and properties that are shared among different sensors.
+Also it comes with the following `methods`:
 
-### Properties
+| Output | Method | Input | Description |
+|--------|--------|-------|-------------|
+| none | `HallSwitch` | uint8_t pin, bool MagnetSignal | Constructor of the class |
+| bool | `read` | none | Reads the current state of the hall-switch sensor, true if magnet |
+| bool | `changed` | none | Returns true if the state of the hall-switch sensor has changed |
 
-- `id` (int): The unique identifier of the sensor.
-- `name` (string): The name of the sensor.
-- `type` (string): The type of the sensor.
+The Definitions can be found in `HallSwitch.cpp`.
 
-### Methods
+### Endstop Class
 
-- `read()`: Reads the sensor data and returns the measured value.
-- `calibrate()`: Calibrates the sensor for accurate readings.
-- `reset()`: Resets the sensor to its default state.
+The class `Endstop` stores data regarding an endstop sensor. It stores the following `attributes`:
 
-## Temperature Sensor Class
+| Datatype | Name | Description |
+|------|------|-------------|
+| uint8_t | `pin1` | The pin number of the first endstop sensor. |
+| uint8_t | `pin2` | The pin number of the second endstop sensor. |
+| uint8_t | `state` | The last state of the endstop sensor. (0 = no endstop, 1 = first endstop, 2 = second endstop) |
 
-The `TemperatureSensor` class extends the `Sensor` class and provides additional functionality specific to temperature sensors.
+Also it comes with the following `methods`:
 
-### Properties
+| Output | Method | Input | Description |
+|--------|--------|-------|-------------|
+| none | `Endstops` | uint8_t pin1, uint8_t pin2 | Constructor of the class |
+| uint8_t | `read` | none | Reads the current state of the endstop sensor and returns the state as uint8_t (see attribute state)|
+| bool | `changed` | none | Returns true if the state of the endstop sensor has changed |
 
-- `unit` (string): The unit of temperature measurement (e.g., Celsius, Fahrenheit).
+The Definitions can be found in `Endstops.cpp`.
 
-### Methods
+### Button Class
 
-- `convertToFahrenheit()`: Converts the temperature reading from Celsius to Fahrenheit.
-- `convertToCelsius()`: Converts the temperature reading from Fahrenheit to Celsius.
+The class `Button` stores data regarding a RGB-button. It stores the following `attributes`:
 
-## Pressure Sensor Class
+| Datatype | Name | Description |
+|------|------|-------------|
+| uint8_t | `Butpin` | The pin number of the button. |
+| uint8_t | `RPin` | The pin number of the red LED. |
+| uint8_t | `GPin` | The pin number of the green LED. |
+| uint8_t | `BPin` | The pin number of the blue LED. |
+| bool | `isPressed` | The last state of the button. |
 
-The `PressureSensor` class extends the `Sensor` class and provides additional functionality specific to pressure sensors.
+Also it comes with the following `methods`:
 
-### Properties
+| Output | Method | Input | Description |
+|--------|--------|-------|-------------|
+| bool | `read` | none | Reads the current state of the button and returns true if pressed |
+| bool | `changed` | none | Returns true if the state of the button has changed |
+| none | `waitForPress` | none | Waits until the button is pressed AND released again |
+| none | `updateLED` | uint8_t mode | Updates the LED of the button according to the mode (0 = off, 1 = red, 2 = green, 3 = blue, 4 = yellow, 5 = cyan, 6 = magenta, 7 = white) |
+| none | `updateLED` | uint8_t red, uint8_t green, uint8_t blue | Updates the LED of the button according to the RGB values (needs `PWM` pins)! |
+| none | `Button` | uint8_t Butpin, uint8_t RPin, uint8_t GPin, uint8_t BPin | Constructor of the class |
 
-- `unit` (string): The unit of pressure measurement (e.g., Pascal, Bar).
-
-### Methods
-
-- `convertToPascal()`: Converts the pressure reading to Pascal.
-- `convertToBar()`: Converts the pressure reading to Bar.
-
-## Usage
-
-To use the `sensors.hpp` library in your project, include the following line at the top of your source file:
+The Definitions can be found in `Button.cpp`.
