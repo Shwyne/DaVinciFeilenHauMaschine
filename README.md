@@ -11,6 +11,7 @@ This is a program to run an electrified version of another invention of the famo
   - [Included Hardware](#included-hardware)
   - [Getting Started](#getting-started)
   - [Usage](#usage)
+  - [Functions in main.cpp](#functions-in-maincpp)
   - [License](#license)
 
 ## Dependencies
@@ -69,26 +70,16 @@ Everything regarding functions of the components is either found in the public l
 
 Exception-Handling is defined in `libs\ExceptHandling` and for Testing Purposes (Components or Machine Functions) there is a folder `libs\TestFunctions`.
 
+## Functions in main.cpp
+| Return-Type | Function | Input-Parameter | Description |
+| --- | --- | --- | --- |
+| void | `setup()` | none | Initializes the machine |
+| void | `loop()` | none | Main Loop of the machine (Idle -> Run -> Reset -> Idle -> ...) |
+| void | `initStateOfMachine()` | none | Initializes the state of the machine (after start or clearing an error)
+| void | `checkState()` | StatusClass status | Checks the state of the machine `status` and, if status != SUCCESS, print error and endless error-loop |
+| void | `step::home()` | none | Homes the Stepper (Sign pos 1) |
+| void | `serv::hammerstop()` | none | Activates the Hammerstop |
+| void | `serv::hammergo()` | none | Deactivates the Hammerstop |
 ## License
 
-MIT License
-
-Copyright (c) [2024] [Shwyne]
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
