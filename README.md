@@ -77,9 +77,9 @@ Exception-Handling is defined in `libs\ExceptHandling` and for Testing Purposes 
 | void | `loop()` | none | Main Loop of the machine (Idle -> Run -> Reset -> Idle -> ...) |
 | void | `initStateOfMachine()` | none | Initializes the state of the machine (after start or clearing an error)
 | void | `checkState()` | StatusClass status | Checks the state of the machine `status` and, if status != SUCCESS, print error and endless error-loop |
-| void | `step::home()` | none | Homes the Stepper (Sign pos 1) |
-| void | `serv::hammerstop()` | none | Activates the Hammerstop |
-| void | `serv::hammergo()` | none | Deactivates the Hammerstop |
+| StatusClass | `step::home()` | none | Homes the Stepper (Sign pos 1), returns the status of the process (success, if worked. Error, if an error occured) |
+| StatusClass | `serv::hammerstop()` | none | Activates the Hammerstop, returns the status of the process (success, if worked. Error, if an error occured) |
+| StatusClass | `serv::hammergo()` | none | Deactivates the Hammerstop, returns the status of the process (success, if worked. Error, if an error occured) |
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
