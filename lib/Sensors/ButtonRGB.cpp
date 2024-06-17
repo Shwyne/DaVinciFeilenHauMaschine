@@ -26,51 +26,26 @@ Button::Button(uint8_t Butpin, uint8_t Rpin, uint8_t Gpin, uint8_t Bpin) {
 
 //* Read the Button and returns the state
 bool Button::read() {
-    
     // If the Button is pressed, set triggered to true
-    if(digitalRead(Butpin) == LOW){
-        isPressed = true;
-    }
-    
-    // else, set triggered to false
-    else{
-        isPressed = false;
-    }
-    
+    isPressed = (digitalRead(Butpin) == LOW);
     // Return the state of the Button
     return isPressed;
 }
 
 //* Check if the state of the Button has changed, returns true if changed
 bool Button::changed() {
-    
     // Save the previous state of the Button
     bool prevState = isPressed;
-    
     // If the state of the Button has changed, return true
-    if(read() != prevState){
-        return true;
-    }
-
-    else{
-        return false;   // Else, return false
-    }
-
+    return (read() != prevState);
 }
 
 //* Wait for the Button to be pressed and released (Blocking)
-void Button::waitForPress() {
-    
+void Button::waitForPress() { 
     // Wait for the Button to be pressed
-    while(this->read() != true){
-        delay(1);
-    }
-
+    while(this->read() != true) delay(1);
     // Wait for the Button to be released
-    while(this->read() != false){
-        delay(1);
-    }
-
+    while(this->read() != false) delay(1);
     // Return
     return;
 }

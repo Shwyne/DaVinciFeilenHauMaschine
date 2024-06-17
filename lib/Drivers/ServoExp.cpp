@@ -37,7 +37,6 @@ void ServoExp::setPositions(uint8_t pos1, uint8_t pos2) { //Input: Pos1, Pos2 (0
   
   this->pos1 = constrain(pos1, this->MIN, this->MAX);     // pos1 and pos 2 are constrained
   this->pos2 = constrain(pos2, this->MIN, this->MAX);     // to the min and max angle set in the constructor
-  
   return;
 }
 
@@ -51,16 +50,13 @@ void ServoExp::write(uint8_t angle){  //Input: Angle (0-255)
 }
 
 // Move the servo to a specific position
-void ServoExp::runToPos(uint8_t pos) {  //Input: Pos (0-255), only 0 or 1 will move the servo
-  
+void ServoExp::runToPos(uint8_t pos) {  
   if(pos == 0 && pos1 != 255){  // If pos is 0 -> pos1, AND pos1 is defined (not 255)
     this->write(pos1);  // Move to pos1
   }
-  
   else if(pos == 1 && pos2 != 255){ // If pos is 1 -> pos2, AND pos2 is defined (not 255)
     this->write(pos2);  // Move to pos2
   }
-  
   return;
 }
 

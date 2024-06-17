@@ -136,18 +136,14 @@ void MP6550::coast() {
 
 //* Put the driver to sleep
 void MP6550::sleep() {
-
   // If SLPpin is not used, return
   if(SLPpin == 255) return;
-
   // If speed is not 0, ...
   if (speed != 0) {  
     this->brake();  //... brake the motor
   }
-
   // Set SLPpin to LOW -> Standby
   digitalWrite(SLPpin, LOW);
-
   return;
 }
 

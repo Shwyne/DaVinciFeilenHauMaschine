@@ -1,6 +1,5 @@
 #pragma once
 #include <Arduino.h>
-#include <AccelStepper.h>
 
 //*----------------------- MP6550 -----------------------*//
 
@@ -68,6 +67,7 @@ public:
 
 //*----------------------- Stepper Expansion -----------------------*//
 
+#include <AccelStepper.h>
 //Derived Class from AccelStepper adding some additional functions
 class StepperExp : public AccelStepper {
   private:

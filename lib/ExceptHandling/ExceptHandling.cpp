@@ -1,5 +1,43 @@
 #include "ExceptHandling.hpp"
 
+StatusClass::StatusClass(uint8_t status, uint8_t group){
+        switch(status){
+            case 0:
+                this->status = CompStatus::NOT_CONNECTED;
+                break;
+            case 1:
+                this->status = CompStatus::SUCCESS;
+                break;
+            case 2:
+                this->status = CompStatus::TIMEOUT;
+                break;
+            case 3:
+                this->status = CompStatus::ERROR;
+                break;
+            default:
+                this->status = CompStatus::UNDEFINED;
+                break;
+        }
+        switch(group){
+            case 0:
+                this->group = FuncGroup::HW;
+                break;
+            case 1:
+                this->group = FuncGroup::SL;
+                break;
+            case 2:
+                this->group = FuncGroup::WG;
+                break;
+            case 3:
+                this->group = FuncGroup::SG;
+                break;
+            default:
+                this->group = FuncGroup::UNDEFINED;
+                break;
+        }
+        return;
+    }
+
 // Function to print error message
 void printError(StatusClass status){
   uint8_t StatusInt = status.getStatusInt();  // Get status integer from status object for switch case

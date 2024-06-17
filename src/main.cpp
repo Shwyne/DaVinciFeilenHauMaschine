@@ -84,7 +84,7 @@ void setup() {
   digitalWrite(pin::STP_SLP, LOW);  // Disables the sleep mode of the stepperdriver
   SGst.setupMS(pin::STP_M0, pin::STP_M1, pin::STP_M2); // Sets the microsteps of the stepperdriver
   SGst.setMS(STP::MICRO_STEPS); // Sets the microsteps of the stepperdriver
-  SGst.setPos(STP::SPR, STP::ANGLE*STP::i); // Sets the position for the stepper to move to
+  SGst.setPos(STP::SPR, STP::REAL_ANGLE); // Sets the position for the stepper to move to
 
   if(skipInit == false)initStateOfMachine(); //Initializes the Machine to the Home-Position
   

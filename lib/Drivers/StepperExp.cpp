@@ -25,12 +25,10 @@ void StepperExp::setMS(uint8_t microSteps) {
     bool M0 = log2MicroSteps & 1;
     bool M1 = log2MicroSteps & 2;
     bool M2 = log2MicroSteps & 4;
-
     // Write the values to the pins
     digitalWrite(M0pin, M0);
     digitalWrite(M1pin, M1);
     digitalWrite(M2pin, M2);
-
     return;
 }
 
@@ -38,56 +36,66 @@ uint8_t StepperExp::getMS() {
     return this->microSteps;
 }
 
-void StepperExp::setPos(uint16_t steps, uint8_t angle) {
-    this->StepsPerRev = steps;
-    this->StepsPerPos = steps * microSteps * angle/360;
+void StepperExp::setPos(uint16_t stepsPerRev, uint8_t angle) {  
+    this->StepsPerRev = stepsPerRev;    // Set Steps per Revolution
+    this->StepsPerPos = this->StepsPerRev * this->microSteps * angle/360;   // Calculate Steps per Position
     return;
 }
 
 void StepperExp::nextPos() {
-    if(SLPpin != 255) digitalWrite(SLPpin, HIGH);
-    this->moveTo(this->currentPos + this->StepsPerPos);
-    this->runToPosition();
-    this->currentPos += this->StepsPerPos;
-    if(SLPpin != 255 && autoSleep) digitalWrite(SLPpin, LOW);
+    if(SLPpin != 255){  // If SLPpin is used, set it to HIGH (Driver active)
+        digitalWrite(SLPpin, HIGH);
+    }
+    uint32_t targetPos = this->currentPos + this->StepsPerPos; // Calculate the target position
+    this->moveTo(targetPos);    // Sets the target position as the target
+    this->runToPosition();  // Runs the motor to the target position
+    this->currentPos = targetPos;   // Updates the current position
+    if(SLPpin != 255 && autoSleep){
+        digitalWrite(SLPpin, LOW);  //if SLPpin is set and autoSleep is active, put Driver to sleep
+    } 
     return;
 }
 
 void StepperExp::prevPos() {
-    if(SLPpin != 255) digitalWrite(SLPpin, HIGH);
-    this->moveTo(this->currentPos - this->StepsPerPos);
-    this->runToPosition();
-    this->currentPos -= this->StepsPerPos;
-    if(SLPpin != 255 && autoSleep) digitalWrite(SLPpin, LOW);
+    if(SLPpin != 255){  // If SLPpin is used, set it to HIGH (Driver active)
+        digitalWrite(SLPpin, HIGH);
+    } 
+    uint32_t targetPos = this->currentPos - this->StepsPerPos; // Calculate the target position
+    this->moveTo(targetPos);    // Sets the target position as the target
+    this->runToPosition();  // Runs the motor to the target position
+    this->currentPos = targetPos;   // Updates the current position
+    if(SLPpin != 255 && autoSleep){
+        digitalWrite(SLPpin, LOW);  //if SLPpin is set and autoSleep is active, put Driver to sleep
+    }
     return;
 }
 
 void StepperExp::setSleep(uint8_t SLPpin, bool autoSleep) {
-    this->SLPpin = SLPpin;
-    this->autoSleep = autoSleep;
-    pinMode(SLPpin, OUTPUT);
-    if(autoSleep) {
-        this->sleep();
+    this->SLPpin = SLPpin;  // Set the SLPpin
+    this->autoSleep = autoSleep;    // Set the autoSleep
+    pinMode(SLPpin, OUTPUT);    // Set the SLPpin to OUTPUT
+    if(autoSleep) { // If autoSleep is active,
+        this->sleep();  // ... put the driver to sleep
     }
     return;
 }
 
 void StepperExp::sleep() {
-    if(SLPpin == 255) return;
-    if(this->isRunning()) {
-        this->stop();
+    if(SLPpin == 255) return;   // If SLPpin is not used, return
+    if(this->isRunning()) { // If the motor is running, ...
+        this->stop();   // ... stop the motor
     }
-    digitalWrite(SLPpin, LOW);
+    digitalWrite(SLPpin, LOW);  // Set SLPpin to LOW -> Standby
     return;
 }
 
 void StepperExp::wake() {
-    if(SLPpin == 255) return;
-    digitalWrite(SLPpin, HIGH);
+    if(SLPpin == 255) return;   // If SLPpin is not used, return
+    digitalWrite(SLPpin, HIGH); // Set SLPpin to HIGH -> Active
     return;
 }
 
 void StepperExp::zeroPos() {
-    this->currentPos = 0;
+    this->currentPos = 0;   // Set the current position to 0
     return;
 }
